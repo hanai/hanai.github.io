@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>node traverse visualization</title>
+    <meta charset="utf-8" />
+    <style>
+      #root {
+        border: 1px dashed #999;
+        overflow: hidden;
+      }
+
+      .child {
+        float: left;
+        border: 1px solid #666;
+        margin: 12px 2px 2px;
+      }
+
+      .child:empty {
+        height: 10px;
+        width: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="child">
+        <div class="child"></div>
+        <div class="child">
+          <div class="child">
+            <div class="child"></div>
+            <div class="child"></div>
+          </div>
+        </div>
+        <div class="child"></div>
+      </div>
+      <div class="child">
+        <div class="child"></div>
+        <div class="child">
+          <div class="child"></div>
+        </div>
+      </div>
+      <div class="child">
+        <div class="child">
+          <div class="child"></div>
+          <div class="child">
+            <div class="child"></div>
+            <div class="child">
+              <div class="child"></div>
+            </div>
+          </div>
+        </div>
+        <div class="child">
+          <div class="child"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      function getRandomColor() {
+        var letters = "0123456789ABCDEF";
+        var color = "#";
+        for (var i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+      }
+
+      const traverseNode = (node, cb, isChild) => {
+        if (node.firstChild) {
+          traverseNode(node.firstChild, cb, true);
+        }
+
+        cb(node);
+
+        if (isChild && node.nextSibling) {
+          traverseNode(node.nextSibling, cb, true);
+        }
+      };
+
+      const nodeList = [];
+      traverseNode(document.querySelector("#root"), (node) => {
+        if (node.nodeType !== Node.TEXT_NODE) {
+          nodeList.push(node);
+        }
+      });
+
+      const timer = setInterval(() => {
+        if (nodeList.length) {
+          const node = nodeList.shift();
+          node.style.backgroundColor = getRandomColor();
+        } else {
+          clearInterval(timer);
+        }
+      }, 800);
+    </script>
+  </body>
+</html>
