@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+<link rel="preconnect" href="//fonts.loli.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.loli.net/css?family=Lato:300,300italic,400,400italic,700,700italic%7CSource+Code+Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.ihanai.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqusjs","storage":true,"lazyload":true,"nav":null,"activeClass":"disqusjs"},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":true,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="Underscore.js 1.8.3 &#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L6  (function() &amp;#123; &amp;#125;.call(this));  立即执行函数，避免污染外部环境。 &#x2F;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Underscore 源码学习">
+<meta property="og:url" content="https://blog.ihanai.com/2017/08/learning-underscore-source-code-1.html">
+<meta property="og:site_name" content="寒霭的部落格">
+<meta property="og:description" content="Underscore.js 1.8.3 &#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L6  (function() &amp;#123; &amp;#125;.call(this));  立即执行函数，避免污染外部环境。 &#x2F;">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-08-25T10:00:04.000Z">
+<meta property="article:modified_time" content="2022-04-23T16:18:32.804Z">
+<meta property="article:author" content="Hanai">
+<meta property="article:tag" content="JavaScript">
+<meta property="article:tag" content="underscore">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://blog.ihanai.com/2017/08/learning-underscore-source-code-1.html">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.ihanai.com/2017/08/learning-underscore-source-code-1.html","path":"2017/08/learning-underscore-source-code-1.html","title":"Underscore 源码学习"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Underscore 源码学习 | 寒霭的部落格</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-106796055-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-106796055-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">寒霭的部落格</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">爱技术，爱生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tips"><a href="/categories/Tip/" rel="section"><i class="fa fa-tags fa-fw"></i>点滴</a></li><li class="menu-item menu-item-investment"><a href="/categories/Investment/" rel="section"><i class="fa fa-hand-holding-usd fa-fw"></i>投资</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-hashtag fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tools"><a href="/pages/tools/" rel="section"><i class="fa fa-toolbox fa-fw"></i>工具</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Hanai</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">92</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">177</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hanai" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hanai" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:ihanai1991@gmail.com" title="E-Mail → mailto:ihanai1991@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.ihanai.com/2017/08/learning-underscore-source-code-1.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hanai">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Underscore 源码学习 | 寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Underscore 源码学习
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017-08-25 18:00:04" itemprop="dateCreated datePublished" datetime="2017-08-25T18:00:04+08:00">2017-08-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-04-24 00:18:32" itemprop="dateModified" datetime="2022-04-24T00:18:32+08:00">2022-04-24</time>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>8.8k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>16 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>Underscore.js 1.8.3</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L6
+
+(function() &#123;
+&#125;.call(this));</code></pre>
+
+<p>立即执行函数，避免污染外部环境。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L12
+
+var root &#x3D; this;</code></pre>
+
+<p>获取根对象，<code>self</code> 或 <code>global</code>。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L18
+
+var ArrayProto &#x3D; Array.prototype, ObjProto &#x3D; Object.prototype, FuncProto &#x3D; Function.prototype;</code></pre>
+
+<p>压缩变量名长度，节省字节。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L21
+
+var
+  push             &#x3D; ArrayProto.push,
+  slice            &#x3D; ArrayProto.slice,
+  toString         &#x3D; ObjProto.toString,
+  hasOwnProperty   &#x3D; ObjProto.hasOwnProperty;</code></pre>
+
+<p>为一些方法创建引用，方便访问。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L29
+
+var
+  nativeIsArray      &#x3D; Array.isArray,
+  nativeKeys         &#x3D; Object.keys,
+  nativeBind         &#x3D; FuncProto.bind,
+  nativeCreate       &#x3D; Object.create;</code></pre>
+
+<p>ES5 中原生支持的一些方法。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L36
+
+var Ctor &#x3D; function()&#123;&#125;;</code></pre>
+
+<p>一个空的构造函数。</p>
+<hr>
+<span id="more"></span>
+
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L39
+
+var _ &#x3D; function(obj) &#123;
+  if (obj instanceof _) return obj;
+  if (!(this instanceof _)) return new _(obj);
+  this._wrapped &#x3D; obj;
+&#125;;</code></pre>
+
+<p>创建 <code>Underscore</code> 对象。</p>
+<p>传入 <code>obj</code> 是 <code>_</code> 的实例时返回 <code>obj</code> 本身。<code>_</code> 不是作为构造函数调用时，使用 <code>new _(obj)</code> 生成 <code>_</code> 的实例。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L48
+
+if (typeof exports !&#x3D;&#x3D; &#39;undefined&#39;) &#123;
+  if (typeof module !&#x3D;&#x3D; &#39;undefined&#39; &amp;&amp; module.exports) &#123;
+    exports &#x3D; module.exports &#x3D; _;
+  &#125;
+  exports._ &#x3D; _;
+&#125; else &#123;
+  root._ &#x3D; _;
+&#125;</code></pre>
+
+<p>Node.js 环境中导出 <code>_</code>，浏览器环境中将 <code>_</code> 添加到根对象。</p>
+<hr>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L60
+
+&#x2F;&#x2F; Internal function that returns an efficient (for current engines) version
+&#x2F;&#x2F; of the passed-in callback, to be repeatedly applied in other Underscore
+&#x2F;&#x2F; functions.
+var optimizeCb &#x3D; function(func, context, argCount) &#123;
+  if (context &#x3D;&#x3D;&#x3D; void 0) return func;
+  switch (argCount &#x3D;&#x3D; null ? 3 : argCount) &#123;
+    case 1: return function(value) &#123;
+      return func.call(context, value);
+    &#125;;
+    case 2: return function(value, other) &#123;
+      return func.call(context, value, other);
+    &#125;;
+    case 3: return function(value, index, collection) &#123;
+      return func.call(context, value, index, collection);
+    &#125;;
+    case 4: return function(accumulator, value, index, collection) &#123;
+      return func.call(context, accumulator, value, index, collection);
+    &#125;;
+  &#125;
+  return function() &#123;
+    return func.apply(context, arguments);
+  &#125;;
+&#125;;</code></pre>
+
+<p>用来返回高效的（对当前引擎而言）回调函数的内部函数。</p>
+<p>回调函数无 <code>context</code> 时直接返回原 <code>func</code>。</p>
+<p>js引擎访问 <code>arguments</code> 性能较差，且 <code>call</code> 比 <code>apply</code> 快（<a target="_blank" rel="noopener" href="https://jsperf.com/apply-vs-call/5">apply() vs call()</a>），所以在知道参数列表长度的时候，直接用 <code>call</code> 会更好。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L84
+
+&#x2F;&#x2F; A mostly-internal function to generate callbacks that can be applied
+&#x2F;&#x2F; to each element in a collection, returning the desired result — either
+&#x2F;&#x2F; identity, an arbitrary callback, a property matcher, or a property accessor.
+var cb &#x3D; function(value, context, argCount) &#123;
+  if (value &#x3D;&#x3D; null) return _.identity;
+  if (_.isFunction(value)) return optimizeCb(value, context, argCount);
+  if (_.isObject(value)) return _.matcher(value);
+  return _.property(value);
+&#125;;</code></pre>
+
+<p>生成可应用于集合中每一个元素的回调函数的内部函数。返回的结果：identity，任意回调，属性匹配器或属性访问器。</p>
+<p>未传入 <code>value</code> 时返回 <code>identity</code>；<code>value</code> 是函数时返回回调函数；<code>value</code> 是对象时返回属性匹配器；其他情况返回属性访问器。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L93
+
+_.iteratee &#x3D; function(value, context) &#123;
+  return cb(value, context, Infinity);
+&#125;;</code></pre>
+
+<p>返回一个参数长度不确定的迭代器。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L97
+
+&#x2F;&#x2F; An internal function for creating assigner functions.
+var createAssigner &#x3D; function(keysFunc, undefinedOnly) &#123;
+  return function(obj) &#123;
+    var length &#x3D; arguments.length;
+    if (length &lt; 2 || obj &#x3D;&#x3D; null) return obj;
+    for (var index &#x3D; 1; index &lt; length; index++) &#123;
+      var source &#x3D; arguments[index],
+          keys &#x3D; keysFunc(source),
+          l &#x3D; keys.length;
+      for (var i &#x3D; 0; i &lt; l; i++) &#123;
+        var key &#x3D; keys[i];
+        if (!undefinedOnly || obj[key] &#x3D;&#x3D;&#x3D; void 0) obj[key] &#x3D; source[key];
+      &#125;
+    &#125;
+    return obj;
+  &#125;;
+&#125;;</code></pre>
+
+<p>创建一个赋值器。传入一个用来获取对象所有 <code>key</code> 的函数 <code>keysFunc</code>。与决定是否只对 undefined 属性赋值的布尔值 <code>undefinedOnly</code>。</p>
+<p>赋值器第一个参数作为 <code>obj</code>，从第 2 个参数开始，获取每个参数的 <code>keys</code>，遍历 <code>keys</code> 为 <code>key</code>，如果 <code>obj</code> 属性 <code>key</code> 的值为 <code>undefined</code>，或创建此赋值器的 <code>undefinedOnly</code> 为 <code>false</code>，则对 <code>obj</code> 的 <code>key</code> 属性赋值。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L115
+
+&#x2F;&#x2F; An internal function for creating a new object that inherits from another.
+var baseCreate &#x3D; function(prototype) &#123;
+  if (!_.isObject(prototype)) return &#123;&#125;;
+  if (nativeCreate) return nativeCreate(prototype);
+  Ctor.prototype &#x3D; prototype;
+  var result &#x3D; new Ctor;
+  Ctor.prototype &#x3D; null;
+  return result;
+&#125;;</code></pre>
+
+<p>用来创建继承另一个对象的对象的内部函数。</p>
+<p>若传入 <code>prototype</code> 不是对象，则返回对象 <code>&#123;&#125;</code>；</p>
+<p>若 <code>Object.create</code> 存在，则用 <code>Object.create</code> 创建新对象；</p>
+<p>若 <code>Object.create</code> 不存在，则对空的构造函数 <code>Ctor</code> 的 <code>prototype</code> 赋值，用 <code>Ctor</code> 创建新的对象。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L125
+
+var property &#x3D; function(key) &#123;
+  return function(obj) &#123;
+    return obj &#x3D;&#x3D; null ? void 0 : obj[key];
+  &#125;;
+&#125;;</code></pre>
+
+<p>生成用来获取对象指定 <code>key</code> 属性的值的函数。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L131
+
+&#x2F;&#x2F; Helper for collection methods to determine whether a collection
+&#x2F;&#x2F; should be iterated as an array or as an object
+&#x2F;&#x2F; Related: http:&#x2F;&#x2F;people.mozilla.org&#x2F;~jorendorff&#x2F;es6-draft.html#sec-tolength
+&#x2F;&#x2F; Avoids a very nasty iOS 8 JIT bug on ARM-64. #2094
+var MAX_ARRAY_INDEX &#x3D; Math.pow(2, 53) - 1;
+var getLength &#x3D; property(&#39;length&#39;);
+var isArrayLike &#x3D; function(collection) &#123;
+  var length &#x3D; getLength(collection);
+  return typeof length &#x3D;&#x3D; &#39;number&#39; &amp;&amp; length &gt;&#x3D; 0 &amp;&amp; length &lt;&#x3D; MAX_ARRAY_INDEX;
+&#125;;</code></pre>
+
+<p>判断一个 <code>collection</code> 是要作为数组还是对象遍历的方法。当 <code>collection</code> 有 <code>length</code> 属性，且 <code>length</code> 属性的值为数字时作为数组遍历。</p>
+<hr>
+<p>Collection 相关函数</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L145
+
+&#x2F;&#x2F; The cornerstone, an &#96;each&#96; implementation, aka &#96;forEach&#96;.
+&#x2F;&#x2F; Handles raw objects in addition to array-likes. Treats all
+&#x2F;&#x2F; sparse array-likes as if they were dense.
+_.each &#x3D; _.forEach &#x3D; function(obj, iteratee, context) &#123;
+  iteratee &#x3D; optimizeCb(iteratee, context);
+  var i, length;
+  if (isArrayLike(obj)) &#123;
+    for (i &#x3D; 0, length &#x3D; obj.length; i &lt; length; i++) &#123;
+      iteratee(obj[i], i, obj);
+    &#125;
+  &#125; else &#123;
+    var keys &#x3D; _.keys(obj);
+    for (i &#x3D; 0, length &#x3D; keys.length; i &lt; length; i++) &#123;
+      iteratee(obj[keys[i]], keys[i], obj);
+    &#125;
+  &#125;
+  return obj;
+&#125;;</code></pre>
+
+<p><code>each</code>, <code>forEach</code> 实现。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L165
+
+_.map &#x3D; _.collect &#x3D; function(obj, iteratee, context) &#123;
+  iteratee &#x3D; cb(iteratee, context);
+  var keys &#x3D; !isArrayLike(obj) &amp;&amp; _.keys(obj),
+      length &#x3D; (keys || obj).length,
+      results &#x3D; Array(length);
+  for (var index &#x3D; 0; index &lt; length; index++) &#123;
+    var currentKey &#x3D; keys ? keys[index] : index;
+    results[index] &#x3D; iteratee(obj[currentKey], currentKey, obj);
+  &#125;
+  return results;
+&#125;;</code></pre>
+
+<p><code>map</code> 实现。<code>results = Array(length)</code> 生成长度符合结果的空数组。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L177
+
+&#x2F;&#x2F; Create a reducing function iterating left or right.
+function createReduce(dir) &#123;
+  &#x2F;&#x2F; Optimized iterator function as using arguments.length
+  &#x2F;&#x2F; in the main function will deoptimize the, see #1991.
+  function iterator(obj, iteratee, memo, keys, index, length) &#123;
+    for (; index &gt;&#x3D; 0 &amp;&amp; index &lt; length; index +&#x3D; dir) &#123;
+      var currentKey &#x3D; keys ? keys[index] : index;
+      memo &#x3D; iteratee(memo, obj[currentKey], currentKey, obj);
+    &#125;
+    return memo;
+  &#125;
+
+  return function(obj, iteratee, memo, context) &#123;
+    iteratee &#x3D; optimizeCb(iteratee, context, 4);
+    var keys &#x3D; !isArrayLike(obj) &amp;&amp; _.keys(obj),
+        length &#x3D; (keys || obj).length,
+        index &#x3D; dir &gt; 0 ? 0 : length - 1;
+    &#x2F;&#x2F; Determine the initial value if none is provided.
+    if (arguments.length &lt; 3) &#123;
+      memo &#x3D; obj[keys ? keys[index] : index];
+      index +&#x3D; dir;
+    &#125;
+    return iterator(obj, iteratee, memo, keys, index, length);
+  &#125;;
+&#125;</code></pre>
+
+<p>使用 <code>createReduce</code> 来创建 <code>reduce</code> 的方法。接受 <code>dir</code> 作为生成的 <code>reduce</code> 的遍历的方向。没有初始值 <code>memo</code> 时采用第一位或最后一位值作为初始值。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;jashkenas&#x2F;underscore&#x2F;blob&#x2F;1.8.3&#x2F;underscore.js#L205
+
+_.reduce &#x3D; _.foldl &#x3D; _.inject &#x3D; createReduce(1);</code></pre>
+
+<p>用 <code>createReduce</code> 生成 <code>reduce</code> 方法。</p>
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="Hanai 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/reward/alipay.png" alt="Hanai 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/JavaScript/" rel="tag"># JavaScript</a>
+              <a href="/tags/underscore/" rel="tag"># underscore</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/08/js-3d-implement-3d-project.html" rel="prev" title="JS 3D 实现：三维投影">
+                  <i class="fa fa-chevron-left"></i> JS 3D 实现：三维投影
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/08/domestic-mirror-for-common-node-package.html" rel="next" title="常用 Node 包国内镜像">
+                  常用 Node 包国内镜像 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hanai</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">182k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">5:32</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.loli.net/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/components/prism-core.min.js" integrity="sha256-c9n/9oG7sBeCouNZfRg5tO8VCCQXGPLiDPJNaF5Qgic=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/autoloader/prism-autoloader.min.js" integrity="sha256-RtKI23ujTCOg3jNK74NK61WGNYbtBWcqh6UKebC2AQo=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/line-numbers/prism-line-numbers.min.js" integrity="sha256-K837BwIyiXo5k/9fCYgqUyA14bN4/Ve9P2SIT0KmZD0=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="//cdnjs.loli.net/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"//cdnjs.loli.net/ajax/libs/mermaid/8.14.0/mermaid.min.js","integrity":"sha256-7wT34TI0pEBeEFoi4z+vhuSddGh6vUTMWdqJ2SDe2jg="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+<script>
+(function () {
+  var createContainer = function (xml) {
+    var container = document.createElement('div');
+    container.className = 'mxgraph';
+    container.style = 'max-width:100%;border:1px solid transparent;';
+    var attr = {
+      highlight: '#0000ff',
+      nav: true,
+      resize: true,
+      toolbar: 'zoom layers lightbox',
+      edit: '_blank',
+      xml: xml
+    };
+    container.setAttribute('data-mxgraph', JSON.stringify(attr));
+    return container;
+  };
+
+  var fetchXml = function (src) {
+    return fetch(src).then(function (res) {
+      return res.text();
+    });
+  };
+
+  var insertDrawioGraphElement = function (src, target) {
+    return fetchXml(src).then(function (xml) {
+      var container = createContainer(xml);
+      target.parentNode.insertBefore(container, target);
+      target.parentNode.removeChild(target);
+
+      return container;
+    });
+  }
+
+  var nodes = document.querySelectorAll('.drawio-placeholder');
+
+  if (nodes.length) {
+    var jobs = Array.prototype.slice.call(nodes).map(function (node) {
+      var src = node.getAttribute('data-src');
+      return insertDrawioGraphElement(src, node);
+    });
+    NexT.utils.getScript('/lib/drawio_viewer.min.js', () => {
+      jobs.forEach(function (job) {
+        job.then(function (element) {
+          try {
+            element.innerHTML = "";
+            GraphViewer.createViewerForElement(element)
+          } catch (e) { throw element.innerHTML = e.message, e; }
+        });
+      })
+    }, window.GraphViewer);
+  }
+}())
+</script>
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"//cdnjs.loli.net/ajax/libs/mathjax/3.2.0/es5/tex-svg-full.js"}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqusjs.css" integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin="anonymous">
+
+<script class="next-config" data-name="disqusjs" type="application/json">{"enable":true,"api":"https://disqus.skk.moe/disqus/","apikey":"FYoVMcKqcN4CqNtu12XmvvZ1VbdbnSv6Vwsm8N6ncNTXWK8ekX3XEzMcuf5qprK4","shortname":"blog-ihanai","js":{"url":"//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqus.js","integrity":"sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw="}}</script>
+<script src="/js/third-party/comments/disqusjs.js"></script>
+
+</body>
+</html>

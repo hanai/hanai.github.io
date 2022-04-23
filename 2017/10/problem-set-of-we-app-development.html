@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+<link rel="preconnect" href="//fonts.loli.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.loli.net/css?family=Lato:300,300italic,400,400italic,700,700italic%7CSource+Code+Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.ihanai.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqusjs","storage":true,"lazyload":true,"nav":null,"activeClass":"disqusjs"},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":true,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="setData: invokeWebviewMethod 数据传输长度为 *** 已经超过最大长度 1048576在小程序中执行 setData 时，如果数据内容过大的话，会出现数据传输长度超过最大长度的问题。其原因在于 setData 实际上是在 webview 上执行了 stringByEvaluatingJavaScriptFromString 这类方法，如果传入数据过大的话，就会使 web">
+<meta property="og:type" content="article">
+<meta property="og:title" content="微信小程序开发问题集">
+<meta property="og:url" content="https://blog.ihanai.com/2017/10/problem-set-of-we-app-development.html">
+<meta property="og:site_name" content="寒霭的部落格">
+<meta property="og:description" content="setData: invokeWebviewMethod 数据传输长度为 *** 已经超过最大长度 1048576在小程序中执行 setData 时，如果数据内容过大的话，会出现数据传输长度超过最大长度的问题。其原因在于 setData 实际上是在 webview 上执行了 stringByEvaluatingJavaScriptFromString 这类方法，如果传入数据过大的话，就会使 web">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-10-25T05:43:13.000Z">
+<meta property="article:modified_time" content="2022-04-23T16:18:32.804Z">
+<meta property="article:author" content="Hanai">
+<meta property="article:tag" content="小程序">
+<meta property="article:tag" content="微信">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://blog.ihanai.com/2017/10/problem-set-of-we-app-development.html">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.ihanai.com/2017/10/problem-set-of-we-app-development.html","path":"2017/10/problem-set-of-we-app-development.html","title":"微信小程序开发问题集"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>微信小程序开发问题集 | 寒霭的部落格</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-106796055-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-106796055-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">寒霭的部落格</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">爱技术，爱生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tips"><a href="/categories/Tip/" rel="section"><i class="fa fa-tags fa-fw"></i>点滴</a></li><li class="menu-item menu-item-investment"><a href="/categories/Investment/" rel="section"><i class="fa fa-hand-holding-usd fa-fw"></i>投资</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-hashtag fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tools"><a href="/pages/tools/" rel="section"><i class="fa fa-toolbox fa-fw"></i>工具</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#setData-invokeWebviewMethod-%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93%E9%95%BF%E5%BA%A6%E4%B8%BA-%E5%B7%B2%E7%BB%8F%E8%B6%85%E8%BF%87%E6%9C%80%E5%A4%A7%E9%95%BF%E5%BA%A6-1048576"><span class="nav-number">1.</span> <span class="nav-text">setData: invokeWebviewMethod 数据传输长度为 *** 已经超过最大长度 1048576</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rich-text-%E6%95%B0%E6%8D%AE%E6%9D%A5%E6%BA%90"><span class="nav-number">2.</span> <span class="nav-text">rich-text 数据来源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rich-text-setData"><span class="nav-number">3.</span> <span class="nav-text">rich-text setData</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Hanai</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">92</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">177</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hanai" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hanai" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:ihanai1991@gmail.com" title="E-Mail → mailto:ihanai1991@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.ihanai.com/2017/10/problem-set-of-we-app-development.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hanai">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="微信小程序开发问题集 | 寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          微信小程序开发问题集
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017-10-25 13:43:13" itemprop="dateCreated datePublished" datetime="2017-10-25T13:43:13+08:00">2017-10-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-04-24 00:18:32" itemprop="dateModified" datetime="2022-04-24T00:18:32+08:00">2022-04-24</time>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.8k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>9 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h2 id="setData-invokeWebviewMethod-数据传输长度为-已经超过最大长度-1048576"><a href="#setData-invokeWebviewMethod-数据传输长度为-已经超过最大长度-1048576" class="headerlink" title="setData: invokeWebviewMethod 数据传输长度为 *** 已经超过最大长度 1048576"></a>setData: invokeWebviewMethod 数据传输长度为 *** 已经超过最大长度 1048576</h2><p>在小程序中执行 <code>setData</code> 时，如果数据内容过大的话，会出现数据传输长度超过最大长度的问题。其原因在于 <code>setData</code> 实际上是在 webview 上执行了 <code>stringByEvaluatingJavaScriptFromString</code> 这类方法，如果传入数据过大的话，就会使 webview 的内存开销过大，JavaScript 代码执行失败。</p>
+<p>开发中，在存在大量数据的情况下，可以对数据执行 <code>map</code> 之类的操作，仅留下需要展示的数据以及对应的 key，这样每次 <code>setData</code> 的数据就会小很多。</p>
+<hr>
+<h2 id="rich-text-数据来源"><a href="#rich-text-数据来源" class="headerlink" title="rich-text 数据来源"></a>rich-text 数据来源</h2><p>由于小程序不支持 <code>iframe</code> 这样的组件，所以在需要展示 html 页面的时候，只能使用 <code>rich-text</code>。</p>
+<p>欲显示的 html 内容最好在服务器端转换成数组的形式，有以下几个原因：</p>
+<ol>
+<li>根据小程序<a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/debug/wxadoc/dev/component/rich-text.html">开发文档</a>所言，<code>nodes</code> 属性推荐使用 Array 类型，由于组件会将 String 类型转换为 Array 类型，因而性能会有所下降</li>
+<li>rich-text 仅支持有限的 html 标签。对于不支持的标签，一部分可以替换成 <code>span</code> 或者 <code>tag</code> 这类它支持的标签。剩下的也可以根据实际情况直接去除或者替换成提示文字。</li>
+<li>小程序中的 <code>wxss</code> 样式仅能根据 <code>class</code> 生效，而原 html 文档的 css 文件中会有使用类型选择器，为了能使用原有的这些样式，为每一个元素增加类似 <code>__tag__span</code> 这样的类名，同时对原 css 执行正则表达式将其中的 <code>span &#123;...&#125;</code> 替换成 <code>.__tag__span &#123;...&#125;</code> 的形式</li>
+<li>剔除 rich-text 不支持的 attr</li>
+</ol>
+<p>以上这些操作适合在服务器端执行，代码如下：</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">const parse5 &#x3D; require(&#39;parse5&#39;);
+const entities &#x3D; require(&#39;entities&#39;);
+
+const AVAILABLE_ATTRS &#x3D; [
+  &#39;class&#39;,
+  &#39;style&#39;,
+  &#39;span&#39;,
+  &#39;width&#39;,
+  &#39;alt&#39;,
+  &#39;src&#39;,
+  &#39;height&#39;,
+  &#39;start&#39;,
+  &#39;type&#39;,
+  &#39;colspan&#39;,
+  &#39;rowspan&#39;,
+];
+
+const AVAILABLE_TAGS &#x3D; [
+  &#39;a&#39;, &#39;abbr&#39;, &#39;b&#39;, &#39;blockquote&#39;,
+  &#39;br&#39;, &#39;code&#39;, &#39;col&#39;, &#39;colgroup&#39;,
+  &#39;dd&#39;, &#39;del&#39;, &#39;div&#39;, &#39;dl&#39;, &#39;dt&#39;,
+  &#39;em&#39;, &#39;fieldset&#39;, &#39;h1&#39;, &#39;h2&#39;, &#39;h3&#39;,
+  &#39;h4&#39;, &#39;h5&#39;, &#39;h6&#39;, &#39;hr&#39;, &#39;i&#39;, &#39;img&#39;,
+  &#39;ins&#39;, &#39;label&#39;, &#39;legend&#39;, &#39;li&#39;,
+  &#39;ol&#39;, &#39;p&#39;, &#39;q&#39;, &#39;span&#39;, &#39;strong&#39;,
+  &#39;sub&#39;, &#39;sup&#39;, &#39;table&#39;, &#39;tbody&#39;,
+  &#39;td&#39;, &#39;tfoot&#39;, &#39;th&#39;, &#39;thead&#39;,
+  &#39;tr&#39;, &#39;ul&#39;,
+];
+
+const REPLACEABLE_TAGS &#x3D; [
+  &#39;pre&#39;, &#39;small&#39;, &#39;var&#39;, &#39;button&#39;, &#39;font&#39;, &#39;details&#39;,
+  &#39;summary&#39;, &#39;caption&#39;, &#39;figure&#39;, &#39;figcaption&#39;, &#39;dfn&#39;,
+  &#39;string&#39;, &#39;s&#39;,
+];
+
+const REPLACE_MAP &#x3D; &#123;
+  pre: &#39;div&#39;,
+  small: &#39;span&#39;,
+  var: &#39;span&#39;,
+  button: &#39;span&#39;,
+  font: &#39;span&#39;,
+  details: &#39;div&#39;,
+  summary: &#39;div&#39;,
+  caption: &#39;div&#39;,
+  figure: &#39;div&#39;,
+  figcaption: &#39;div&#39;,
+  dfn: &#39;span&#39;,
+  string: &#39;span&#39;,
+  s: &#39;span&#39;,
+&#125;;
+
+const IGNOREABLE_TAGS &#x3D; [
+  &#39;meta&#39;,
+];
+
+function parseNode(ctx, node) &#123;
+  const &#123; childNodes, tagName, attrs: _attrs &#125; &#x3D; node;
+  let needOverrideTagName &#x3D; false;
+
+  if (node.nodeName &#x3D;&#x3D;&#x3D; &#39;#text&#39;) &#123;
+    return &#123;
+      type: &#39;text&#39;,
+      text: entities.decodeHTML(node.value),
+    &#125;;
+  &#125;
+
+  if (AVAILABLE_TAGS.indexOf(tagName) &#x3D;&#x3D;&#x3D; -1) &#123;
+    if (IGNOREABLE_TAGS.indexOf(tagName) &gt; -1) &#123;
+      return null;
+    &#125; else if (REPLACEABLE_TAGS.indexOf(tagName) &gt; -1) &#123;
+      needOverrideTagName &#x3D; true;
+    &#125; else &#123;
+      if (tagName !&#x3D;&#x3D; &#39;iframe&#39;) &#123;
+        ctx.logger.info(&#96;UNSUPPORT TAG: $&#123;tagName&#125;&#96;);
+      &#125;
+
+      return &#123;
+        name: &#39;div&#39;,
+        attrs: &#123;
+          class: &#39;content-unavailable&#39;,
+        &#125;,
+        children: [
+          &#123;
+            type: &#39;text&#39;,
+            text: &#39;此处内容无法在当前环境中显示&#39;,
+          &#125;,
+        ],
+      &#125;;
+    &#125;
+  &#125;
+
+  let children;
+  if (childNodes &amp;&amp; childNodes.length &gt; 0) &#123;
+    children &#x3D; childNodes.map(node &#x3D;&gt; parseNode(ctx, node)).filter(child &#x3D;&gt; !!child);
+  &#125;
+
+  const attrs &#x3D; _attrs
+    .filter(attr &#x3D;&gt; AVAILABLE_ATTRS.indexOf(attr.name) &gt; -1)
+    .reduce((obj, attr) &#x3D;&gt; &#123;
+      obj[attr.name] &#x3D; attr.value;
+      return obj;
+    &#125;, &#123;&#125;);
+
+  const classNames &#x3D; attrs.class ? attrs.class.split(&#39; &#39;) : [];
+  classNames.push(&#96;__tag_$&#123;tagName&#125;&#96;, &#39;__univ&#39;);
+  attrs.class &#x3D; classNames.join(&#39; &#39;);
+
+  const nodeObj &#x3D; &#123;
+    name: needOverrideTagName ? REPLACE_MAP[tagName] : tagName,
+    attrs,
+    children,
+  &#125;;
+
+  return nodeObj;
+&#125;
+
+function parseHtml(ctx, html) &#123;
+  const documentFragment &#x3D; parse5.parseFragment(html);
+  const nodes &#x3D; documentFragment.childNodes.map(node &#x3D;&gt; parseNode(ctx, node));
+  return nodes;
+&#125;</code></pre>
+
+<hr>
+<h2 id="rich-text-setData"><a href="#rich-text-setData" class="headerlink" title="rich-text setData"></a>rich-text setData</h2><p>在使用 <code>setData</code> 对 <code>rich-text</code> 的 <code>nodes</code> 属性赋值时，如果元素过多，则可能出现页面卡顿或者数据传输长度超过最大长度的问题。此时，可以将 nodes 数组分成适量片段，分段 <code>setData</code>。</p>
+<pre class="line-numbers language-wxml" data-language="wxml"><code class="language-wxml">&lt;rich-text wx:for&#x3D;&quot;&#123;&#123; nodesList &#125;&#125;&quot; wx:for-index&#x3D;&quot;index&quot; wx:for-item&#x3D;&quot;nodes&quot; nodes&#x3D;&quot;&#123;&#123;nodes&#125;&#125;&quot;&gt;&lt;&#x2F;rich-text&gt;</code></pre>
+
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">const nodes &#x3D; ***;
+const nodesList &#x3D; [];
+const lastNodes &#x3D; nodes.reduce((arr, cur) &#x3D;&gt; &#123;
+  const curArr &#x3D; [cur];
+  const newArr &#x3D; arr.concat(curArr);
+  if (JSON.stringify(newArr).length &gt; (1048576 - 1024 * 1000)) &#123;
+    nodesList.push(arr);
+    return curArr;
+  &#125; else &#123;
+    return newArr;
+  &#125;
+&#125;, []);
+nodesList.push(lastNodes);
+
+this.setData(&#123;
+  &#39;nodesList&#39;: []
+&#125;);
+nodesList.forEach((nodes, idx) &#x3D;&gt; &#123;
+  if (idx &#x3D;&#x3D;&#x3D; 0) &#123;
+    this.setData(&#123;
+      [&#96;nodesList[$&#123;idx&#125;]&#96;]: nodes,
+      loading: false
+    &#125;);
+  &#125; else &#123;
+    this.setData(&#123;
+      [&#96;nodesList[$&#123;idx&#125;]&#96;]: nodes
+    &#125;);
+  &#125;
+&#125;);</code></pre>
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="Hanai 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/reward/alipay.png" alt="Hanai 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E5%B0%8F%E7%A8%8B%E5%BA%8F/" rel="tag"># 小程序</a>
+              <a href="/tags/%E5%BE%AE%E4%BF%A1/" rel="tag"># 微信</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/09/solve-problem-that-chinese-garbled-in-nodejs-exported-csv-by-excel.html" rel="prev" title="解决 Node.js 导出的 csv 文件在 Excel 打开中文乱码的问题">
+                  <i class="fa fa-chevron-left"></i> 解决 Node.js 导出的 csv 文件在 Excel 打开中文乱码的问题
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/11/react-navigation-practice.html" rel="next" title="react-navigation 实践">
+                  react-navigation 实践 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hanai</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">182k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">5:32</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.loli.net/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/components/prism-core.min.js" integrity="sha256-c9n/9oG7sBeCouNZfRg5tO8VCCQXGPLiDPJNaF5Qgic=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/autoloader/prism-autoloader.min.js" integrity="sha256-RtKI23ujTCOg3jNK74NK61WGNYbtBWcqh6UKebC2AQo=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/line-numbers/prism-line-numbers.min.js" integrity="sha256-K837BwIyiXo5k/9fCYgqUyA14bN4/Ve9P2SIT0KmZD0=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="//cdnjs.loli.net/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"//cdnjs.loli.net/ajax/libs/mermaid/8.14.0/mermaid.min.js","integrity":"sha256-7wT34TI0pEBeEFoi4z+vhuSddGh6vUTMWdqJ2SDe2jg="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+<script>
+(function () {
+  var createContainer = function (xml) {
+    var container = document.createElement('div');
+    container.className = 'mxgraph';
+    container.style = 'max-width:100%;border:1px solid transparent;';
+    var attr = {
+      highlight: '#0000ff',
+      nav: true,
+      resize: true,
+      toolbar: 'zoom layers lightbox',
+      edit: '_blank',
+      xml: xml
+    };
+    container.setAttribute('data-mxgraph', JSON.stringify(attr));
+    return container;
+  };
+
+  var fetchXml = function (src) {
+    return fetch(src).then(function (res) {
+      return res.text();
+    });
+  };
+
+  var insertDrawioGraphElement = function (src, target) {
+    return fetchXml(src).then(function (xml) {
+      var container = createContainer(xml);
+      target.parentNode.insertBefore(container, target);
+      target.parentNode.removeChild(target);
+
+      return container;
+    });
+  }
+
+  var nodes = document.querySelectorAll('.drawio-placeholder');
+
+  if (nodes.length) {
+    var jobs = Array.prototype.slice.call(nodes).map(function (node) {
+      var src = node.getAttribute('data-src');
+      return insertDrawioGraphElement(src, node);
+    });
+    NexT.utils.getScript('/lib/drawio_viewer.min.js', () => {
+      jobs.forEach(function (job) {
+        job.then(function (element) {
+          try {
+            element.innerHTML = "";
+            GraphViewer.createViewerForElement(element)
+          } catch (e) { throw element.innerHTML = e.message, e; }
+        });
+      })
+    }, window.GraphViewer);
+  }
+}())
+</script>
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"//cdnjs.loli.net/ajax/libs/mathjax/3.2.0/es5/tex-svg-full.js"}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqusjs.css" integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin="anonymous">
+
+<script class="next-config" data-name="disqusjs" type="application/json">{"enable":true,"api":"https://disqus.skk.moe/disqus/","apikey":"FYoVMcKqcN4CqNtu12XmvvZ1VbdbnSv6Vwsm8N6ncNTXWK8ekX3XEzMcuf5qprK4","shortname":"blog-ihanai","js":{"url":"//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqus.js","integrity":"sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw="}}</script>
+<script src="/js/third-party/comments/disqusjs.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+<link rel="preconnect" href="//fonts.loli.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.loli.net/css?family=Lato:300,300italic,400,400italic,700,700italic%7CSource+Code+Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.ihanai.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqusjs","storage":true,"lazyload":true,"nav":null,"activeClass":"disqusjs"},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":true,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="问题在 Flutter 中进行页面跳转需要访问到当前的 BuildContext 及目标页面的 Widget，不利于代码的组织管理。 onPressed: () &amp;#123;   Navigator.push(     context,     MaterialPageRoute(builder: (context) &#x3D;&gt; SecondRoute()),   ); &amp;#125;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在 Flutter 中使用服务定位器管理路由">
+<meta property="og:url" content="https://blog.ihanai.com/2021/01/use-service-locator-to-manage-route-in-flutter.html">
+<meta property="og:site_name" content="寒霭的部落格">
+<meta property="og:description" content="问题在 Flutter 中进行页面跳转需要访问到当前的 BuildContext 及目标页面的 Widget，不利于代码的组织管理。 onPressed: () &amp;#123;   Navigator.push(     context,     MaterialPageRoute(builder: (context) &#x3D;&gt; SecondRoute()),   ); &amp;#125;">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-01-09T05:47:40.000Z">
+<meta property="article:modified_time" content="2022-04-23T16:18:32.808Z">
+<meta property="article:author" content="Hanai">
+<meta property="article:tag" content="Flutter">
+<meta property="article:tag" content="get_it">
+<meta property="article:tag" content="路由">
+<meta property="article:tag" content="服务定位器">
+<meta property="article:tag" content="设计模式">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://blog.ihanai.com/2021/01/use-service-locator-to-manage-route-in-flutter.html">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.ihanai.com/2021/01/use-service-locator-to-manage-route-in-flutter.html","path":"2021/01/use-service-locator-to-manage-route-in-flutter.html","title":"在 Flutter 中使用服务定位器管理路由"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>在 Flutter 中使用服务定位器管理路由 | 寒霭的部落格</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-106796055-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-106796055-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">寒霭的部落格</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">爱技术，爱生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tips"><a href="/categories/Tip/" rel="section"><i class="fa fa-tags fa-fw"></i>点滴</a></li><li class="menu-item menu-item-investment"><a href="/categories/Investment/" rel="section"><i class="fa fa-hand-holding-usd fa-fw"></i>投资</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-hashtag fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tools"><a href="/pages/tools/" rel="section"><i class="fa fa-toolbox fa-fw"></i>工具</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%AE%9A%E4%BD%8D%E5%99%A8%EF%BC%88Service-Locator%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">服务定位器（Service Locator）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BA%94%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA-NavigationService"><span class="nav-number">3.1.</span> <span class="nav-text">创建 NavigationService</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B3%A8%E5%86%8C-locator"><span class="nav-number">3.2.</span> <span class="nav-text">注册 locator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#routes-%E7%94%9F%E6%88%90"><span class="nav-number">3.3.</span> <span class="nav-text">routes 生成</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8-MaterialApp-%E4%B8%8A%E5%AE%9A%E4%B9%89%E8%B7%AF%E7%94%B1"><span class="nav-number">3.4.</span> <span class="nav-text">在 MaterialApp 上定义路由</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E4%B8%AD%E8%B0%83%E7%94%A8"><span class="nav-number">3.5.</span> <span class="nav-text">应用中调用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Hanai</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">92</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">177</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hanai" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hanai" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:ihanai1991@gmail.com" title="E-Mail → mailto:ihanai1991@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.ihanai.com/2021/01/use-service-locator-to-manage-route-in-flutter.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hanai">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="在 Flutter 中使用服务定位器管理路由 | 寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          在 Flutter 中使用服务定位器管理路由
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021-01-09 13:47:40" itemprop="dateCreated datePublished" datetime="2021-01-09T13:47:40+08:00">2021-01-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-04-24 00:18:32" itemprop="dateModified" datetime="2022-04-24T00:18:32+08:00">2022-04-24</time>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3.3k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>6 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>在 Flutter 中进行页面跳转需要访问到当前的 <code>BuildContext</code> 及目标页面的 <code>Widget</code>，不利于代码的组织管理。</p>
+<pre class="line-numbers language-dart" data-language="dart"><code class="language-dart">onPressed: () &#123;
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) &#x3D;&gt; SecondRoute()),
+  );
+&#125;</code></pre>
+
+<h2 id="服务定位器（Service-Locator）"><a href="#服务定位器（Service-Locator）" class="headerlink" title="服务定位器（Service Locator）"></a>服务定位器（Service Locator）</h2><blockquote><p>The service locator pattern is a design pattern used in software development to encapsulate the processes involved in obtaining a service with a strong abstraction layer. This pattern uses a central registry known as the “service locator”, which on request returns the information necessary to perform a certain task. Proponents of the pattern say the approach simplifies component-based applications where all dependencies are cleanly listed at the beginning of the whole application design, consequently making traditional dependency injection a more complex way of connecting objects. Critics of the pattern argue that it is an anti-pattern which obscures dependencies and makes software harder to test.</p>
+<footer><strong>Wikipedia - Service locator pattern</strong></footer></blockquote>
+
+<p>简单来说服务定位器模式可以将获得服务的过程封装在服务定位器中，应用程序的代码不需要管理维护服务的大量依赖，使应用程序的结构得到良好的分离。</p>
+<span id="more"></span>
+
+<h2 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h2><h3 id="创建-NavigationService"><a href="#创建-NavigationService" class="headerlink" title="创建 NavigationService"></a>创建 NavigationService</h3><p>首先创建 <code>NavigationService</code> 处理页面的跳转，它包含两个方法：<code>navigateTo</code>、 <code>goBack</code> 分别负责页面的跳转和返回。</p>
+<p><code>navigatorKey</code> 是用来创建 <code>Navigator</code> 的 <code>Key</code>，通过它可以直接得到 <code>Navigator</code> 而不需要使用 <code>Navigator.of</code> 从 <code>BuildContext</code> 中获取 <code>Navigator</code>。</p>
+<pre class="line-numbers language-none"><code class="language-none">class NavigationService &#123;
+  final GlobalKey&lt;NavigatorState&gt; navigatorKey &#x3D;
+      new GlobalKey&lt;NavigatorState&gt;();
+
+  Future&lt;dynamic&gt; navigateTo(String routeName, &#123;dynamic arguments&#125;) &#123;
+    return navigatorKey.currentState!
+        .pushNamed(routeName, arguments: arguments);
+  &#125;
+
+  void goBack() &#123;
+    navigatorKey.currentState!.pop();
+  &#125;
+&#125;</code></pre>
+
+<h3 id="注册-locator"><a href="#注册-locator" class="headerlink" title="注册 locator"></a>注册 locator</h3><p>在 <code>get_it</code> 的 setup 中注册 <code>NavigationService</code>。</p>
+<pre class="line-numbers language-dart" data-language="dart"><code class="language-dart">GetIt locator &#x3D; GetIt.instance;
+
+void setupLocator() &#123;
+  locator.registerLazySingleton(() &#x3D;&gt; NavigationService());
+&#125;</code></pre>
+
+<h3 id="routes-生成"><a href="#routes-生成" class="headerlink" title="routes 生成"></a>routes 生成</h3><p>在 <code>router.dart</code> 中创建路由生成函数。页面参数的可以通过 <code>RouteSettings</code> 来传递。</p>
+<pre class="line-numbers language-dart" data-language="dart"><code class="language-dart">const String HomePageRoute &#x3D; &#39;&#x2F;&#39;;
+
+const String LoginPageRoute &#x3D; &#39;&#x2F;login&#39;;
+
+const String WebViewPageRoute &#x3D; &#39;&#x2F;web_view&#39;;
+
+Route&lt;dynamic&gt; generateRoute(RouteSettings settings) &#123;
+  switch (settings.name) &#123;
+    case HomePageRoute:
+      return MaterialPageRoute(builder: (context) &#x3D;&gt; HomePage(title: &#39;Home&#39;));
+    case LoginPageRoute:
+      return MaterialPageRoute(builder: (context) &#x3D;&gt; LoginPage(title: &#39;Login&#39;));
+    case WebViewPageRoute:
+      var args &#x3D; settings.arguments! as Map&lt;String, dynamic&gt;;
+      var url &#x3D; args[&#39;url&#39;] as String;
+      var title &#x3D; args[&#39;title&#39;] as String;
+      return MaterialPageRoute(
+          builder: (context) &#x3D;&gt; WebViewPage(
+                url: url,
+                title: title,
+              ));
+    default:
+      return MaterialPageRoute(builder: (context) &#x3D;&gt; HomePage(title: &#39;Home&#39;));
+  &#125;
+&#125;</code></pre>
+
+<h3 id="在-MaterialApp-上定义路由"><a href="#在-MaterialApp-上定义路由" class="headerlink" title="在 MaterialApp 上定义路由"></a>在 MaterialApp 上定义路由</h3><pre class="line-numbers language-dart" data-language="dart"><code class="language-dart">import &#39;package:flutter&#x2F;material.dart&#39;;
+import &#39;services&#x2F;navigation_service.dart&#39;;
+import &#39;router.dart&#39; as router;
+import &#39;get_it.dart&#39;;
+
+void main() &#123;
+  setupLocator();
+
+  runApp(MyApp());
+&#125;
+
+class MyApp extends StatelessWidget &#123;
+  @override
+  Widget build(BuildContext context) &#123;
+    return MaterialApp(
+      navigatorKey: locator&lt;NavigationService&gt;().navigatorKey,
+      onGenerateRoute: router.generateRoute,
+      initialRoute: router.HomePageRoute
+    );
+  &#125;
+&#125;</code></pre>
+
+<h3 id="应用中调用"><a href="#应用中调用" class="headerlink" title="应用中调用"></a>应用中调用</h3><p>完成上述操作后，我们便可以在应用中的任意位置通过 <code>locator</code> 访问 <code>NavigationService</code> 来进行页面跳转：</p>
+<pre class="line-numbers language-dart" data-language="dart"><code class="language-dart">class _HomePageState extends State&lt;HomePage&gt; &#123;
+  final NavigationService _navigationService &#x3D; locator&lt;NavigationService&gt;();
+
+  _onPressed () &#123;
+    _navigationService.navigateTo(router.LoginPageRoute);
+  &#125;
+&#125;</code></pre>
+
+<p>此时页面跳转仅需要访问到 <code>locator</code>、<code>NavigationService</code> 和目标页路由的 <code>name</code>。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Service_locator_pattern">Wikipedia - Service locator pattern</a></li>
+<li><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Service_locator_pattern">pub.dev - get_it</a></li>
+<li><a target="_blank" rel="noopener" href="https://flutter.dev/docs/cookbook/navigation/named-routes">Flutter - Navigate with named routes</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="Hanai 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/reward/alipay.png" alt="Hanai 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Flutter/" rel="tag"># Flutter</a>
+              <a href="/tags/get-it/" rel="tag"># get_it</a>
+              <a href="/tags/%E8%B7%AF%E7%94%B1/" rel="tag"># 路由</a>
+              <a href="/tags/%E6%9C%8D%E5%8A%A1%E5%AE%9A%E4%BD%8D%E5%99%A8/" rel="tag"># 服务定位器</a>
+              <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag"># 设计模式</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/common-extension-method-implementation.html" rel="prev" title="常见扩展方法实现">
+                  <i class="fa fa-chevron-left"></i> 常见扩展方法实现
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/09/install-chinese-lang-for-darktable.html" rel="next" title="Darktable 安装中文语言">
+                  Darktable 安装中文语言 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hanai</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">182k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">5:32</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.loli.net/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/components/prism-core.min.js" integrity="sha256-c9n/9oG7sBeCouNZfRg5tO8VCCQXGPLiDPJNaF5Qgic=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/autoloader/prism-autoloader.min.js" integrity="sha256-RtKI23ujTCOg3jNK74NK61WGNYbtBWcqh6UKebC2AQo=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/line-numbers/prism-line-numbers.min.js" integrity="sha256-K837BwIyiXo5k/9fCYgqUyA14bN4/Ve9P2SIT0KmZD0=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="//cdnjs.loli.net/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"//cdnjs.loli.net/ajax/libs/mermaid/8.14.0/mermaid.min.js","integrity":"sha256-7wT34TI0pEBeEFoi4z+vhuSddGh6vUTMWdqJ2SDe2jg="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+<script>
+(function () {
+  var createContainer = function (xml) {
+    var container = document.createElement('div');
+    container.className = 'mxgraph';
+    container.style = 'max-width:100%;border:1px solid transparent;';
+    var attr = {
+      highlight: '#0000ff',
+      nav: true,
+      resize: true,
+      toolbar: 'zoom layers lightbox',
+      edit: '_blank',
+      xml: xml
+    };
+    container.setAttribute('data-mxgraph', JSON.stringify(attr));
+    return container;
+  };
+
+  var fetchXml = function (src) {
+    return fetch(src).then(function (res) {
+      return res.text();
+    });
+  };
+
+  var insertDrawioGraphElement = function (src, target) {
+    return fetchXml(src).then(function (xml) {
+      var container = createContainer(xml);
+      target.parentNode.insertBefore(container, target);
+      target.parentNode.removeChild(target);
+
+      return container;
+    });
+  }
+
+  var nodes = document.querySelectorAll('.drawio-placeholder');
+
+  if (nodes.length) {
+    var jobs = Array.prototype.slice.call(nodes).map(function (node) {
+      var src = node.getAttribute('data-src');
+      return insertDrawioGraphElement(src, node);
+    });
+    NexT.utils.getScript('/lib/drawio_viewer.min.js', () => {
+      jobs.forEach(function (job) {
+        job.then(function (element) {
+          try {
+            element.innerHTML = "";
+            GraphViewer.createViewerForElement(element)
+          } catch (e) { throw element.innerHTML = e.message, e; }
+        });
+      })
+    }, window.GraphViewer);
+  }
+}())
+</script>
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"//cdnjs.loli.net/ajax/libs/mathjax/3.2.0/es5/tex-svg-full.js"}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqusjs.css" integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin="anonymous">
+
+<script class="next-config" data-name="disqusjs" type="application/json">{"enable":true,"api":"https://disqus.skk.moe/disqus/","apikey":"FYoVMcKqcN4CqNtu12XmvvZ1VbdbnSv6Vwsm8N6ncNTXWK8ekX3XEzMcuf5qprK4","shortname":"blog-ihanai","js":{"url":"//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqus.js","integrity":"sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw="}}</script>
+<script src="/js/third-party/comments/disqusjs.js"></script>
+
+</body>
+</html>

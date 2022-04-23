@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+<link rel="preconnect" href="//fonts.loli.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.loli.net/css?family=Lato:300,300italic,400,400italic,700,700italic%7CSource+Code+Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.ihanai.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqusjs","storage":true,"lazyload":true,"nav":null,"activeClass":"disqusjs"},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":true,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="想要深入了解 Virtual DOM，我们可以学习 snabbdom 这个库。Snabbdom 是一个专注简洁、模块化、高性能的虚拟 DOM 库。 用法如下： var snabbdom &#x3D; require(&#39;snabbdom&#39;); var patch &#x3D; snabbdom.init([ &#x2F;&#x2F; Init patch function with">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入 Virtual DOM">
+<meta property="og:url" content="https://blog.ihanai.com/2018/01/deep-into-virtual-dom.html">
+<meta property="og:site_name" content="寒霭的部落格">
+<meta property="og:description" content="想要深入了解 Virtual DOM，我们可以学习 snabbdom 这个库。Snabbdom 是一个专注简洁、模块化、高性能的虚拟 DOM 库。 用法如下： var snabbdom &#x3D; require(&#39;snabbdom&#39;); var patch &#x3D; snabbdom.init([ &#x2F;&#x2F; Init patch function with">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-01-22T03:58:38.000Z">
+<meta property="article:modified_time" content="2022-04-23T16:18:32.804Z">
+<meta property="article:author" content="Hanai">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="VNode">
+<meta property="article:tag" content="图解">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://blog.ihanai.com/2018/01/deep-into-virtual-dom.html">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.ihanai.com/2018/01/deep-into-virtual-dom.html","path":"2018/01/deep-into-virtual-dom.html","title":"深入 Virtual DOM"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>深入 Virtual DOM | 寒霭的部落格</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-106796055-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-106796055-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">寒霭的部落格</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">爱技术，爱生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tips"><a href="/categories/Tip/" rel="section"><i class="fa fa-tags fa-fw"></i>点滴</a></li><li class="menu-item menu-item-investment"><a href="/categories/Investment/" rel="section"><i class="fa fa-hand-holding-usd fa-fw"></i>投资</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-hashtag fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tools"><a href="/pages/tools/" rel="section"><i class="fa fa-toolbox fa-fw"></i>工具</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#VNode-%E7%B1%BB"><span class="nav-number">1.</span> <span class="nav-text">VNode 类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#h-%E7%94%9F%E6%88%90-VNode-%E6%A0%91"><span class="nav-number">2.</span> <span class="nav-text">h 生成 VNode 树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#patch"><span class="nav-number">3.</span> <span class="nav-text">patch</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Hanai</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">92</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">177</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hanai" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hanai" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:ihanai1991@gmail.com" title="E-Mail → mailto:ihanai1991@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.ihanai.com/2018/01/deep-into-virtual-dom.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hanai">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="深入 Virtual DOM | 寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深入 Virtual DOM
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-01-22 11:58:38" itemprop="dateCreated datePublished" datetime="2018-01-22T11:58:38+08:00">2018-01-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-04-24 00:18:32" itemprop="dateModified" datetime="2022-04-24T00:18:32+08:00">2022-04-24</time>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>16k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>30 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>想要深入了解 Virtual DOM，我们可以学习 <a target="_blank" rel="noopener" href="https://github.com/snabbdom/snabbdom">snabbdom</a> 这个库。<code>Snabbdom</code> 是一个专注简洁、模块化、高性能的虚拟 DOM 库。</p>
+<p>用法如下：</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">var snabbdom &#x3D; require(&#39;snabbdom&#39;);
+var patch &#x3D; snabbdom.init([ &#x2F;&#x2F; Init patch function with chosen modules
+  require(&#39;snabbdom&#x2F;modules&#x2F;class&#39;).default, &#x2F;&#x2F; makes it easy to toggle classes
+  require(&#39;snabbdom&#x2F;modules&#x2F;props&#39;).default, &#x2F;&#x2F; for setting properties on DOM elements
+  require(&#39;snabbdom&#x2F;modules&#x2F;style&#39;).default, &#x2F;&#x2F; handles styling on elements with support for animations
+  require(&#39;snabbdom&#x2F;modules&#x2F;eventlisteners&#39;).default, &#x2F;&#x2F; attaches event listeners
+]);
+var h &#x3D; require(&#39;snabbdom&#x2F;h&#39;).default; &#x2F;&#x2F; helper function for creating vnodes
+
+var container &#x3D; document.getElementById(&#39;container&#39;);
+
+var vnode &#x3D; h(&#39;div#container.two.classes&#39;, &#123;on: &#123;click: someFn&#125;&#125;, [
+  h(&#39;span&#39;, &#123;style: &#123;fontWeight: &#39;bold&#39;&#125;&#125;, &#39;This is bold&#39;),
+  &#39; and this is just normal text&#39;,
+  h(&#39;a&#39;, &#123;props: &#123;href: &#39;&#x2F;foo&#39;&#125;&#125;, &#39;I\&#39;ll take you places!&#39;)
+]);
+&#x2F;&#x2F; Patch into empty DOM element – this modifies the DOM as a side effect
+patch(container, vnode);
+
+var newVnode &#x3D; h(&#39;div#container.two.classes&#39;, &#123;on: &#123;click: anotherEventHandler&#125;&#125;, [
+  h(&#39;span&#39;, &#123;style: &#123;fontWeight: &#39;normal&#39;, fontStyle: &#39;italic&#39;&#125;&#125;, &#39;This is now italic type&#39;),
+  &#39; and this is still just normal text&#39;,
+  h(&#39;a&#39;, &#123;props: &#123;href: &#39;&#x2F;bar&#39;&#125;&#125;, &#39;I\&#39;ll take you places!&#39;)
+]);
+&#x2F;&#x2F; Second &#96;patch&#96; invocation
+patch(vnode, newVnode); &#x2F;&#x2F; Snabbdom efficiently updates the old view to the new state</code></pre>
+
+<p>由于它仅有约 200 行源码容易阅读，支持 JSX，并且 Vue 的 <code>patch.js</code> 便是在它的基础上进行些许修改得来的，所以非常值得学习。</p>
+<span id="more"></span>
+
+<h3 id="VNode-类"><a href="#VNode-类" class="headerlink" title="VNode 类"></a><code>VNode</code> 类</h3><p>Virtual DOM 的基础是 VNode 类。</p>
+<pre class="line-numbers language-ts" data-language="ts"><code class="language-ts">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;snabbdom&#x2F;snabbdom&#x2F;blob&#x2F;v0.7.1&#x2F;src&#x2F;vnode.ts
+
+export type Key &#x3D; string | number;
+
+export interface VNode &#123;
+  sel: string | undefined;
+  data: VNodeData | undefined;
+  children: Array&lt;VNode | string&gt; | undefined;
+  elm: Node | undefined;
+  text: string | undefined;
+  key: Key | undefined;
+&#125;
+
+export interface VNodeData &#123;
+  props?: Props;
+  attrs?: Attrs;
+  class?: Classes;
+  style?: VNodeStyle;
+  dataset?: Dataset;
+  on?: On;
+  hero?: Hero;
+  attachData?: AttachData;
+  hook?: Hooks;
+  key?: Key;
+  ns?: string; &#x2F;&#x2F; for SVGs
+  fn?: () &#x3D;&gt; VNode; &#x2F;&#x2F; for thunks
+  args?: Array&lt;any&gt;; &#x2F;&#x2F; for thunks
+  [key: string]: any; &#x2F;&#x2F; for any other 3rd party module
+&#125;
+
+export function vnode(sel: string | undefined,
+                      data: any | undefined,
+                      children: Array&lt;VNode | string&gt; | undefined,
+                      text: string | undefined,
+                      elm: Element | Text | undefined): VNode &#123;
+  let key &#x3D; data &#x3D;&#x3D;&#x3D; undefined ? undefined : data.key;
+  return &#123;sel: sel, data: data, children: children,
+          text: text, elm: elm, key: key&#125;;
+&#125;</code></pre>
+
+<p>可以看到 <code>VNode</code> 有这些属性：</p>
+<ul>
+<li>sel: 选择器</li>
+<li>data: VNode 承载的各种属性及方法</li>
+<li>children: VNode 的子元素列表</li>
+<li>elm: VNode 对应的 DOM 节点</li>
+<li>text: VNode 文字节点的内容</li>
+<li>key: VNode 在列表中 patch 时用到的标识，与 <code>data.key</code> 相同</li>
+</ul>
+<h3 id="h-生成-VNode-树"><a href="#h-生成-VNode-树" class="headerlink" title="h 生成 VNode 树"></a><code>h</code> 生成 VNode 树</h3><pre class="line-numbers language-ts" data-language="ts"><code class="language-ts">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;snabbdom&#x2F;snabbdom&#x2F;blob&#x2F;v0.7.1&#x2F;src&#x2F;h.ts
+
+export type VNodes &#x3D; Array&lt;VNode&gt;;
+export type VNodesSparse &#x3D; VNode | Array&lt;VNode | undefined | null&gt;;
+
+export function h(sel: string): VNode;
+export function h(sel: string, data: VNodeData): VNode;
+export function h(sel: string, text: string): VNode;
+export function h(sel: string, children: VNodesSparse): VNode;
+export function h(sel: string, data: VNodeData, text: string): VNode;
+export function h(sel: string, data: VNodeData, children: VNodesSparse): VNode;
+export function h(sel: any, b?: any, c?: any): VNode &#123;
+  var data: VNodeData &#x3D; &#123;&#125;, children: any, text: any, i: number;
+  if (c !&#x3D;&#x3D; undefined) &#123;
+    data &#x3D; b;
+    if (is.array(c)) &#123; children &#x3D; c; &#125;
+    else if (is.primitive(c)) &#123; text &#x3D; c; &#125;
+    else if (c &amp;&amp; c.sel) &#123; children &#x3D; [c]; &#125;
+  &#125; else if (b !&#x3D;&#x3D; undefined) &#123;
+    if (is.array(b)) &#123; children &#x3D; b; &#125;
+    else if (is.primitive(b)) &#123; text &#x3D; b; &#125;
+    else if (b &amp;&amp; b.sel) &#123; children &#x3D; [b]; &#125;
+    else &#123; data &#x3D; b; &#125;
+  &#125;
+  if (is.array(children)) &#123;
+    for (i &#x3D; 0; i &lt; children.length; ++i) &#123;
+      if (is.primitive(children[i])) children[i] &#x3D; vnode(undefined, undefined, undefined, children[i], undefined);
+    &#125;
+  &#125;
+  if (
+    sel[0] &#x3D;&#x3D;&#x3D; &#39;s&#39; &amp;&amp; sel[1] &#x3D;&#x3D;&#x3D; &#39;v&#39; &amp;&amp; sel[2] &#x3D;&#x3D;&#x3D; &#39;g&#39; &amp;&amp;
+    (sel.length &#x3D;&#x3D;&#x3D; 3 || sel[3] &#x3D;&#x3D;&#x3D; &#39;.&#39; || sel[3] &#x3D;&#x3D;&#x3D; &#39;#&#39;)
+  ) &#123;
+    addNS(data, children, sel);
+  &#125;
+  return vnode(sel, data, children, text, undefined);
+&#125;;
+export default h;</code></pre>
+
+<p><code>h</code> 函数可以用来生成单个 <code>VNode</code> 或是 <code>VNode</code> 树。需要主要的是对于 <code>svg</code> 元素的 <code>VNode</code> 需要添加 <code>ns</code>。</p>
+<!-- more -->
+
+<h3 id="patch"><a href="#patch" class="headerlink" title="patch"></a><code>patch</code></h3><pre class="line-numbers language-ts" data-language="ts"><code class="language-ts">&#x2F;&#x2F; https:&#x2F;&#x2F;github.com&#x2F;snabbdom&#x2F;snabbdom&#x2F;blob&#x2F;v0.7.1&#x2F;src&#x2F;snabbdom.ts
+
+export function init(modules: Array&lt;Partial&lt;Module&gt;&gt;, domApi?: DOMAPI) &#123;
+  let i: number, j: number, cbs &#x3D; (&#123;&#125; as ModuleHooks);
+
+  const api: DOMAPI &#x3D; domApi !&#x3D;&#x3D; undefined ? domApi : htmlDomApi;
+
+  for (i &#x3D; 0; i &lt; hooks.length; ++i) &#123;
+    cbs[hooks[i]] &#x3D; [];
+    for (j &#x3D; 0; j &lt; modules.length; ++j) &#123;
+      const hook &#x3D; modules[j][hooks[i]];
+      if (hook !&#x3D;&#x3D; undefined) &#123;
+        (cbs[hooks[i]] as Array&lt;any&gt;).push(hook);
+      &#125;
+    &#125;
+  &#125;
+
+  function emptyNodeAt(elm: Element) &#123;
+    const id &#x3D; elm.id ? &#39;#&#39; + elm.id : &#39;&#39;;
+    const c &#x3D; elm.className ? &#39;.&#39; + elm.className.split(&#39; &#39;).join(&#39;.&#39;) : &#39;&#39;;
+    return vnode(api.tagName(elm).toLowerCase() + id + c, &#123;&#125;, [], undefined, elm);
+  &#125;
+
+  function createRmCb(childElm: Node, listeners: number) &#123;
+    return function rmCb() &#123;
+      if (--listeners &#x3D;&#x3D;&#x3D; 0) &#123;
+        const parent &#x3D; api.parentNode(childElm);
+        api.removeChild(parent, childElm);
+      &#125;
+    &#125;;
+  &#125;
+
+  function createElm(vnode: VNode, insertedVnodeQueue: VNodeQueue): Node &#123;
+    let i: any, data &#x3D; vnode.data;
+    if (data !&#x3D;&#x3D; undefined) &#123;
+      if (isDef(i &#x3D; data.hook) &amp;&amp; isDef(i &#x3D; i.init)) &#123;
+        i(vnode);
+        data &#x3D; vnode.data;
+      &#125;
+    &#125;
+    let children &#x3D; vnode.children, sel &#x3D; vnode.sel;
+    if (sel &#x3D;&#x3D;&#x3D; &#39;!&#39;) &#123;
+      if (isUndef(vnode.text)) &#123;
+        vnode.text &#x3D; &#39;&#39;;
+      &#125;
+      vnode.elm &#x3D; api.createComment(vnode.text as string);
+    &#125; else if (sel !&#x3D;&#x3D; undefined) &#123;
+      &#x2F;&#x2F; Parse selector
+      const hashIdx &#x3D; sel.indexOf(&#39;#&#39;);
+      const dotIdx &#x3D; sel.indexOf(&#39;.&#39;, hashIdx);
+      const hash &#x3D; hashIdx &gt; 0 ? hashIdx : sel.length;
+      const dot &#x3D; dotIdx &gt; 0 ? dotIdx : sel.length;
+      const tag &#x3D; hashIdx !&#x3D;&#x3D; -1 || dotIdx !&#x3D;&#x3D; -1 ? sel.slice(0, Math.min(hash, dot)) : sel;
+      const elm &#x3D; vnode.elm &#x3D; isDef(data) &amp;&amp; isDef(i &#x3D; (data as VNodeData).ns) ? api.createElementNS(i, tag)
+                                                                               : api.createElement(tag);
+      if (hash &lt; dot) elm.setAttribute(&#39;id&#39;, sel.slice(hash + 1, dot));
+      if (dotIdx &gt; 0) elm.setAttribute(&#39;class&#39;, sel.slice(dot + 1).replace(&#x2F;\.&#x2F;g, &#39; &#39;));
+      for (i &#x3D; 0; i &lt; cbs.create.length; ++i) cbs.create[i](emptyNode, vnode);
+      if (is.array(children)) &#123;
+        for (i &#x3D; 0; i &lt; children.length; ++i) &#123;
+          const ch &#x3D; children[i];
+          if (ch !&#x3D; null) &#123;
+            api.appendChild(elm, createElm(ch as VNode, insertedVnodeQueue));
+          &#125;
+        &#125;
+      &#125; else if (is.primitive(vnode.text)) &#123;
+        api.appendChild(elm, api.createTextNode(vnode.text));
+      &#125;
+      i &#x3D; (vnode.data as VNodeData).hook; &#x2F;&#x2F; Reuse variable
+      if (isDef(i)) &#123;
+        if (i.create) i.create(emptyNode, vnode);
+        if (i.insert) insertedVnodeQueue.push(vnode);
+      &#125;
+    &#125; else &#123;
+      vnode.elm &#x3D; api.createTextNode(vnode.text as string);
+    &#125;
+    return vnode.elm;
+  &#125;
+
+  function addVnodes(parentElm: Node,
+                     before: Node | null,
+                     vnodes: Array&lt;VNode&gt;,
+                     startIdx: number,
+                     endIdx: number,
+                     insertedVnodeQueue: VNodeQueue) &#123;
+    for (; startIdx &lt;&#x3D; endIdx; ++startIdx) &#123;
+      const ch &#x3D; vnodes[startIdx];
+      if (ch !&#x3D; null) &#123;
+        api.insertBefore(parentElm, createElm(ch, insertedVnodeQueue), before);
+      &#125;
+    &#125;
+  &#125;
+
+  function invokeDestroyHook(vnode: VNode) &#123;
+    let i: any, j: number, data &#x3D; vnode.data;
+    if (data !&#x3D;&#x3D; undefined) &#123;
+      if (isDef(i &#x3D; data.hook) &amp;&amp; isDef(i &#x3D; i.destroy)) i(vnode);
+      for (i &#x3D; 0; i &lt; cbs.destroy.length; ++i) cbs.destroy[i](vnode);
+      if (vnode.children !&#x3D;&#x3D; undefined) &#123;
+        for (j &#x3D; 0; j &lt; vnode.children.length; ++j) &#123;
+          i &#x3D; vnode.children[j];
+          if (i !&#x3D; null &amp;&amp; typeof i !&#x3D;&#x3D; &quot;string&quot;) &#123;
+            invokeDestroyHook(i);
+          &#125;
+        &#125;
+      &#125;
+    &#125;
+  &#125;
+
+  function removeVnodes(parentElm: Node,
+                        vnodes: Array&lt;VNode&gt;,
+                        startIdx: number,
+                        endIdx: number): void &#123;
+    for (; startIdx &lt;&#x3D; endIdx; ++startIdx) &#123;
+      let i: any, listeners: number, rm: () &#x3D;&gt; void, ch &#x3D; vnodes[startIdx];
+      if (ch !&#x3D; null) &#123;
+        if (isDef(ch.sel)) &#123;
+          invokeDestroyHook(ch);
+          listeners &#x3D; cbs.remove.length + 1;
+          rm &#x3D; createRmCb(ch.elm as Node, listeners);
+          for (i &#x3D; 0; i &lt; cbs.remove.length; ++i) cbs.remove[i](ch, rm);
+          if (isDef(i &#x3D; ch.data) &amp;&amp; isDef(i &#x3D; i.hook) &amp;&amp; isDef(i &#x3D; i.remove)) &#123;
+            i(ch, rm);
+          &#125; else &#123;
+            rm();
+          &#125;
+        &#125; else &#123; &#x2F;&#x2F; Text node
+          api.removeChild(parentElm, ch.elm as Node);
+        &#125;
+      &#125;
+    &#125;
+  &#125;
+
+  function updateChildren(parentElm: Node,
+                          oldCh: Array&lt;VNode&gt;,
+                          newCh: Array&lt;VNode&gt;,
+                          insertedVnodeQueue: VNodeQueue) &#123;
+    let oldStartIdx &#x3D; 0, newStartIdx &#x3D; 0;
+    let oldEndIdx &#x3D; oldCh.length - 1;
+    let oldStartVnode &#x3D; oldCh[0];
+    let oldEndVnode &#x3D; oldCh[oldEndIdx];
+    let newEndIdx &#x3D; newCh.length - 1;
+    let newStartVnode &#x3D; newCh[0];
+    let newEndVnode &#x3D; newCh[newEndIdx];
+    let oldKeyToIdx: any;
+    let idxInOld: number;
+    let elmToMove: VNode;
+    let before: any;
+
+    while (oldStartIdx &lt;&#x3D; oldEndIdx &amp;&amp; newStartIdx &lt;&#x3D; newEndIdx) &#123;
+      if (oldStartVnode &#x3D;&#x3D; null) &#123;
+        oldStartVnode &#x3D; oldCh[++oldStartIdx]; &#x2F;&#x2F; Vnode might have been moved left
+      &#125; else if (oldEndVnode &#x3D;&#x3D; null) &#123;
+        oldEndVnode &#x3D; oldCh[--oldEndIdx];
+      &#125; else if (newStartVnode &#x3D;&#x3D; null) &#123;
+        newStartVnode &#x3D; newCh[++newStartIdx];
+      &#125; else if (newEndVnode &#x3D;&#x3D; null) &#123;
+        newEndVnode &#x3D; newCh[--newEndIdx];
+      &#125; else if (sameVnode(oldStartVnode, newStartVnode)) &#123;
+        patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue);
+        oldStartVnode &#x3D; oldCh[++oldStartIdx];
+        newStartVnode &#x3D; newCh[++newStartIdx];
+      &#125; else if (sameVnode(oldEndVnode, newEndVnode)) &#123;
+        patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue);
+        oldEndVnode &#x3D; oldCh[--oldEndIdx];
+        newEndVnode &#x3D; newCh[--newEndIdx];
+      &#125; else if (sameVnode(oldStartVnode, newEndVnode)) &#123; &#x2F;&#x2F; Vnode moved right
+        patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue);
+        api.insertBefore(parentElm, oldStartVnode.elm as Node, api.nextSibling(oldEndVnode.elm as Node));
+        oldStartVnode &#x3D; oldCh[++oldStartIdx];
+        newEndVnode &#x3D; newCh[--newEndIdx];
+      &#125; else if (sameVnode(oldEndVnode, newStartVnode)) &#123; &#x2F;&#x2F; Vnode moved left
+        patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue);
+        api.insertBefore(parentElm, oldEndVnode.elm as Node, oldStartVnode.elm as Node);
+        oldEndVnode &#x3D; oldCh[--oldEndIdx];
+        newStartVnode &#x3D; newCh[++newStartIdx];
+      &#125; else &#123;
+        if (oldKeyToIdx &#x3D;&#x3D;&#x3D; undefined) &#123;
+          oldKeyToIdx &#x3D; createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx);
+        &#125;
+        idxInOld &#x3D; oldKeyToIdx[newStartVnode.key as string];
+        if (isUndef(idxInOld)) &#123; &#x2F;&#x2F; New element
+          api.insertBefore(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm as Node);
+          newStartVnode &#x3D; newCh[++newStartIdx];
+        &#125; else &#123;
+          elmToMove &#x3D; oldCh[idxInOld];
+          if (elmToMove.sel !&#x3D;&#x3D; newStartVnode.sel) &#123;
+            api.insertBefore(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm as Node);
+          &#125; else &#123;
+            patchVnode(elmToMove, newStartVnode, insertedVnodeQueue);
+            oldCh[idxInOld] &#x3D; undefined as any;
+            api.insertBefore(parentElm, (elmToMove.elm as Node), oldStartVnode.elm as Node);
+          &#125;
+          newStartVnode &#x3D; newCh[++newStartIdx];
+        &#125;
+      &#125;
+    &#125;
+    if (oldStartIdx &lt;&#x3D; oldEndIdx || newStartIdx &lt;&#x3D; newEndIdx) &#123;
+      if (oldStartIdx &gt; oldEndIdx) &#123;
+        before &#x3D; newCh[newEndIdx+1] &#x3D;&#x3D; null ? null : newCh[newEndIdx+1].elm;
+        addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
+      &#125; else &#123;
+        removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
+      &#125;
+    &#125;
+  &#125;
+
+  function patchVnode(oldVnode: VNode, vnode: VNode, insertedVnodeQueue: VNodeQueue) &#123;
+    let i: any, hook: any;
+    if (isDef(i &#x3D; vnode.data) &amp;&amp; isDef(hook &#x3D; i.hook) &amp;&amp; isDef(i &#x3D; hook.prepatch)) &#123;
+      i(oldVnode, vnode);
+    &#125;
+    const elm &#x3D; vnode.elm &#x3D; (oldVnode.elm as Node);
+    let oldCh &#x3D; oldVnode.children;
+    let ch &#x3D; vnode.children;
+    if (oldVnode &#x3D;&#x3D;&#x3D; vnode) return;
+    if (vnode.data !&#x3D;&#x3D; undefined) &#123;
+      for (i &#x3D; 0; i &lt; cbs.update.length; ++i) cbs.update[i](oldVnode, vnode);
+      i &#x3D; vnode.data.hook;
+      if (isDef(i) &amp;&amp; isDef(i &#x3D; i.update)) i(oldVnode, vnode);
+    &#125;
+    if (isUndef(vnode.text)) &#123;
+      if (isDef(oldCh) &amp;&amp; isDef(ch)) &#123;
+        if (oldCh !&#x3D;&#x3D; ch) updateChildren(elm, oldCh as Array&lt;VNode&gt;, ch as Array&lt;VNode&gt;, insertedVnodeQueue);
+      &#125; else if (isDef(ch)) &#123;
+        if (isDef(oldVnode.text)) api.setTextContent(elm, &#39;&#39;);
+        addVnodes(elm, null, ch as Array&lt;VNode&gt;, 0, (ch as Array&lt;VNode&gt;).length - 1, insertedVnodeQueue);
+      &#125; else if (isDef(oldCh)) &#123;
+        removeVnodes(elm, oldCh as Array&lt;VNode&gt;, 0, (oldCh as Array&lt;VNode&gt;).length - 1);
+      &#125; else if (isDef(oldVnode.text)) &#123;
+        api.setTextContent(elm, &#39;&#39;);
+      &#125;
+    &#125; else if (oldVnode.text !&#x3D;&#x3D; vnode.text) &#123;
+      api.setTextContent(elm, vnode.text as string);
+    &#125;
+    if (isDef(hook) &amp;&amp; isDef(i &#x3D; hook.postpatch)) &#123;
+      i(oldVnode, vnode);
+    &#125;
+  &#125;
+
+  return function patch(oldVnode: VNode | Element, vnode: VNode): VNode &#123;
+    let i: number, elm: Node, parent: Node;
+    const insertedVnodeQueue: VNodeQueue &#x3D; [];
+    for (i &#x3D; 0; i &lt; cbs.pre.length; ++i) cbs.pre[i]();
+
+    if (!isVnode(oldVnode)) &#123;
+      oldVnode &#x3D; emptyNodeAt(oldVnode);
+    &#125;
+
+    if (sameVnode(oldVnode, vnode)) &#123;
+      patchVnode(oldVnode, vnode, insertedVnodeQueue);
+    &#125; else &#123;
+      elm &#x3D; oldVnode.elm as Node;
+      parent &#x3D; api.parentNode(elm);
+
+      createElm(vnode, insertedVnodeQueue);
+
+      if (parent !&#x3D;&#x3D; null) &#123;
+        api.insertBefore(parent, vnode.elm as Node, api.nextSibling(elm));
+        removeVnodes(parent, [oldVnode], 0, 0);
+      &#125;
+    &#125;
+
+    for (i &#x3D; 0; i &lt; insertedVnodeQueue.length; ++i) &#123;
+      (((insertedVnodeQueue[i].data as VNodeData).hook as Hooks).insert as any)(insertedVnodeQueue[i]);
+    &#125;
+    for (i &#x3D; 0; i &lt; cbs.post.length; ++i) cbs.post[i]();
+    return vnode;
+  &#125;;
+&#125;</code></pre>
+
+<p><code>patch</code> 方法用来比较两个 VNode 树。</p>
+<pre class="mermaid">
+graph TD
+subgraph patch
+START[oldVnode, vnode] --&gt; B{&quot;isVnode(oldVnode)&lt;br&gt;判断 oldVnode 是否是 VNode&quot;}
+
+B --&gt; |否: oldVnode 是 DOM 元素| D[将 DOM 元素转换成空的 VNode, 赋值给 oldVnode]
+
+B --&gt; |是| C{&quot;sameVnode(oldVnode, vnode)&lt;br&gt;判断两 vnode 是否相同&lt;br&gt;(sel 与 key 均相同)&quot;}
+
+D --&gt; C
+
+C --&gt; |是| F[&quot;patchVnode(oldVnode, vnode, insertedVnodeQueue)&quot;]
+C --&gt; |否| E[&quot;createElm(vnode, insertedVnodeQueue)&lt;br&gt;替换掉 DOM 中的元素&quot;]
+
+F --&gt; G
+E --&gt; G
+
+G[&quot;对 insertedVnodeQueue 中的 VNode 分别执行 hook.insert&quot;]
+
+G --&gt; END
+
+END[&quot;返回 vnode&quot;]
+end
+</pre>
+
+<p>这里需要留意 <code>sameVnode</code> 函数，当 <code>key</code> 与 <code>sel</code> 都相同时，变认为是同一 <code>VNode</code>。同一 <code>VNode</code> 会进行 <code>patchVnode</code> 操作；非同一 <code>VNode</code> 则会用新的 <code>VNode</code> 新创建 Element，删除旧的 <code>VNode</code>。</p>
+<pre class="mermaid">
+graph TD
+subgraph patchVnode
+START[&quot;oldVnode, vnode, insertedVnodeQueue&quot;] --&gt; B[&quot;hook.prepatch(oldVnode, vnode)&quot;]
+B --&gt; D[&quot;elm &#x3D; vnode.elm &#x3D; oldVnode.elm&quot;]
+D --&gt; E{&quot;oldVnode, vnode 是否同一对象&quot;}
+E --&gt; |是| G[不做处理]
+E --&gt; |否| F{&quot;vnode 是否有 data 属性&quot;}
+F --&gt; |有| H[&quot;对 oldVnode, vnode 应用各 hook.update&quot;]
+F --&gt; |无| I{&quot;vnode 是否有 text 属性&quot;}
+H --&gt; I
+I --&gt; |&quot;有 - vnode 文字节点&quot;| J[&quot;为 vnode.elm 设置 textContent&quot;]
+J --&gt; END
+
+I --&gt; |无 - vnode 元素节点| K{&quot;判断 oldVnode, vnode 的 children 的情况&quot;}
+K --&gt; |都有 children 且不相同| L[&quot;执行 updateChildren&quot;]
+K --&gt; |只有 vnode 有 children| N[&quot;在 elm 下创建 children 的 DOM 元素&quot;]
+K --&gt; |只有 oldVnode 有 children| M[&quot;移除 elm 所有子 VNode&quot;]
+K --&gt; |oldVnode 是文字节点| O[&quot;elm 的 textContent 设为空字符串&quot;]
+L --&gt; END
+M --&gt; END
+N --&gt; END
+O --&gt; END
+END[&quot;hook.postpatch(oldVnode, vnode)&quot;]
+end
+</pre>
+
+<p><code>patchVnode</code> 中先判断两 <code>VNode</code> 是否为同一对象（引用相同），是则不需要修改；然后进行必要的 <code>update</code> hook；再判断 <code>nodeType</code> 类别，<code>children</code> 有无执行不同操作。</p>
+<pre class="mermaid">
+graph TD
+subgraph createElm
+START[&quot;vnode, insertedVnodeQueue&quot;] --&gt; B[&quot;hook.init(vnode)&quot;]
+B --&gt; C{&quot;nodeType&quot;}
+C --&gt; |&quot;其他(text 文本节点)&quot;| D[&quot;createTextNode(vnode.text)&quot;]
+C --&gt; |&quot;element 元素节点&quot;| E[&quot;从 vnode.sel 中提出 tag, class, id&quot;]
+C --&gt; |&quot;comment 注释节点&quot;| F[&quot;createComment(vnode.text)&quot;]
+
+E --&gt; G[&quot;createElement(tag) 或 createElementNS(ns, tag)&quot;]
+G --&gt; H[&quot;设置 class, id 到 vnode.elm&quot;]
+H --&gt; I[&quot;cbs.create[i](emptyNode, vnode)&quot;]
+I --&gt; J{&quot;是否有children&quot;}
+J --&gt; |有| K[&quot;appendChild(elm, createElm(child, insertedVnodeQueue))&quot;]
+K --&gt; M[&quot;hook.create(emptyNode, vnode)&quot;]
+M --&gt; N[&quot;insertedVnodeQueue.push(vnode);&quot;]
+J --&gt; |无| L[&quot;appendChild(elm, createTextNode(vnode.text))&quot;]
+
+N --&gt; END
+L --&gt; END
+D --&gt; END
+F --&gt; END
+END[&quot;return vnode.elm&quot;]
+end
+</pre>
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="Hanai 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/reward/alipay.png" alt="Hanai 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/VNode/" rel="tag"># VNode</a>
+              <a href="/tags/%E5%9B%BE%E8%A7%A3/" rel="tag"># 图解</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/01/vue-principle-from-vnode-to-node.html" rel="prev" title="Vue 原理之从 VNode 到 Node 的流程">
+                  <i class="fa fa-chevron-left"></i> Vue 原理之从 VNode 到 Node 的流程
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/01/hybrid-app-form-component-design-and-implementation-vue-version.html" rel="next" title="Hybrid App 表单组件设计实现(Vue 版)">
+                  Hybrid App 表单组件设计实现(Vue 版) <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hanai</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">182k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">5:32</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.loli.net/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/components/prism-core.min.js" integrity="sha256-c9n/9oG7sBeCouNZfRg5tO8VCCQXGPLiDPJNaF5Qgic=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/autoloader/prism-autoloader.min.js" integrity="sha256-RtKI23ujTCOg3jNK74NK61WGNYbtBWcqh6UKebC2AQo=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/line-numbers/prism-line-numbers.min.js" integrity="sha256-K837BwIyiXo5k/9fCYgqUyA14bN4/Ve9P2SIT0KmZD0=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="//cdnjs.loli.net/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"//cdnjs.loli.net/ajax/libs/mermaid/8.14.0/mermaid.min.js","integrity":"sha256-7wT34TI0pEBeEFoi4z+vhuSddGh6vUTMWdqJ2SDe2jg="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+<script>
+(function () {
+  var createContainer = function (xml) {
+    var container = document.createElement('div');
+    container.className = 'mxgraph';
+    container.style = 'max-width:100%;border:1px solid transparent;';
+    var attr = {
+      highlight: '#0000ff',
+      nav: true,
+      resize: true,
+      toolbar: 'zoom layers lightbox',
+      edit: '_blank',
+      xml: xml
+    };
+    container.setAttribute('data-mxgraph', JSON.stringify(attr));
+    return container;
+  };
+
+  var fetchXml = function (src) {
+    return fetch(src).then(function (res) {
+      return res.text();
+    });
+  };
+
+  var insertDrawioGraphElement = function (src, target) {
+    return fetchXml(src).then(function (xml) {
+      var container = createContainer(xml);
+      target.parentNode.insertBefore(container, target);
+      target.parentNode.removeChild(target);
+
+      return container;
+    });
+  }
+
+  var nodes = document.querySelectorAll('.drawio-placeholder');
+
+  if (nodes.length) {
+    var jobs = Array.prototype.slice.call(nodes).map(function (node) {
+      var src = node.getAttribute('data-src');
+      return insertDrawioGraphElement(src, node);
+    });
+    NexT.utils.getScript('/lib/drawio_viewer.min.js', () => {
+      jobs.forEach(function (job) {
+        job.then(function (element) {
+          try {
+            element.innerHTML = "";
+            GraphViewer.createViewerForElement(element)
+          } catch (e) { throw element.innerHTML = e.message, e; }
+        });
+      })
+    }, window.GraphViewer);
+  }
+}())
+</script>
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"//cdnjs.loli.net/ajax/libs/mathjax/3.2.0/es5/tex-svg-full.js"}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqusjs.css" integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin="anonymous">
+
+<script class="next-config" data-name="disqusjs" type="application/json">{"enable":true,"api":"https://disqus.skk.moe/disqus/","apikey":"FYoVMcKqcN4CqNtu12XmvvZ1VbdbnSv6Vwsm8N6ncNTXWK8ekX3XEzMcuf5qprK4","shortname":"blog-ihanai","js":{"url":"//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqus.js","integrity":"sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw="}}</script>
+<script src="/js/third-party/comments/disqusjs.js"></script>
+
+</body>
+</html>

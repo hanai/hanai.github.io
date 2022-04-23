@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+<link rel="preconnect" href="//fonts.loli.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.loli.net/css?family=Lato:300,300italic,400,400italic,700,700italic%7CSource+Code+Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.ihanai.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqusjs","storage":true,"lazyload":true,"nav":null,"activeClass":"disqusjs"},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":true,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="前言history 是 vue-router 中代码量最大的部分，此模块中共有 4 个文件：  abstract.js base.js hash.js html5.js  base.js 定义了基类 History，其它三个文件中的类都继承自 History。abstract.js, hash.js, html5.js 别对应了 vue-router 设置中 mode 的三个值。hash.js,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VueRouter 源码全解：history">
+<meta property="og:url" content="https://blog.ihanai.com/2017/12/vue-router-source-code-full-analysis-history.html">
+<meta property="og:site_name" content="寒霭的部落格">
+<meta property="og:description" content="前言history 是 vue-router 中代码量最大的部分，此模块中共有 4 个文件：  abstract.js base.js hash.js html5.js  base.js 定义了基类 History，其它三个文件中的类都继承自 History。abstract.js, hash.js, html5.js 别对应了 vue-router 设置中 mode 的三个值。hash.js,">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-12-16T01:12:17.000Z">
+<meta property="article:modified_time" content="2022-04-23T16:18:32.804Z">
+<meta property="article:author" content="Hanai">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="vue-router">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://blog.ihanai.com/2017/12/vue-router-source-code-full-analysis-history.html">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.ihanai.com/2017/12/vue-router-source-code-full-analysis-history.html","path":"2017/12/vue-router-source-code-full-analysis-history.html","title":"VueRouter 源码全解：history"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>VueRouter 源码全解：history | 寒霭的部落格</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-106796055-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-106796055-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">寒霭的部落格</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">爱技术，爱生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tips"><a href="/categories/Tip/" rel="section"><i class="fa fa-tags fa-fw"></i>点滴</a></li><li class="menu-item menu-item-investment"><a href="/categories/Investment/" rel="section"><i class="fa fa-hand-holding-usd fa-fw"></i>投资</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-hashtag fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tools"><a href="/pages/tools/" rel="section"><i class="fa fa-toolbox fa-fw"></i>工具</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%BB%E7%A0%81"><span class="nav-number">2.</span> <span class="nav-text">读码</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#base-js"><span class="nav-number">2.1.</span> <span class="nav-text">base.js</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#abstract-js"><span class="nav-number">2.2.</span> <span class="nav-text">abstract.js</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Hanai</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">92</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">177</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hanai" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hanai" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:ihanai1991@gmail.com" title="E-Mail → mailto:ihanai1991@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.ihanai.com/2017/12/vue-router-source-code-full-analysis-history.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hanai">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="VueRouter 源码全解：history | 寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          VueRouter 源码全解：history
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017-12-16 09:12:17" itemprop="dateCreated datePublished" datetime="2017-12-16T09:12:17+08:00">2017-12-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-04-24 00:18:32" itemprop="dateModified" datetime="2022-04-24T00:18:32+08:00">2022-04-24</time>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>11k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>19 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>history 是 vue-router 中代码量最大的部分，此模块中共有 4 个文件：</p>
+<ul>
+<li>abstract.js</li>
+<li>base.js</li>
+<li>hash.js</li>
+<li>html5.js</li>
+</ul>
+<p><code>base.js</code> 定义了基类 <code>History</code>，其它三个文件中的类都继承自 <code>History</code>。<code>abstract.js</code>, <code>hash.js</code>, <code>html5.js</code> 别对应了 vue-router 设置中 mode 的三个值。<code>hash.js</code>, <code>html5.js</code> 适用于浏览器中的环境。<code>abstract.js</code> 适用于 node.js 环境。</p>
+<h3 id="读码"><a href="#读码" class="headerlink" title="读码"></a>读码</h3><h4 id="base-js"><a href="#base-js" class="headerlink" title="base.js"></a><a target="_blank" rel="noopener" href="https://github.com/vuejs/vue-router/blob/v3.0.1/src/history/base.js">base.js</a></h4><pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;* @flow *&#x2F;
+
+import &#123; _Vue &#125; from &#39;..&#x2F;install&#39;
+import type Router from &#39;..&#x2F;index&#39;
+import &#123; inBrowser &#125; from &#39;..&#x2F;util&#x2F;dom&#39;
+import &#123; runQueue &#125; from &#39;..&#x2F;util&#x2F;async&#39;
+import &#123; warn, isError &#125; from &#39;..&#x2F;util&#x2F;warn&#39;
+import &#123; START, isSameRoute &#125; from &#39;..&#x2F;util&#x2F;route&#39;
+import &#123;
+  flatten,
+  flatMapComponents,
+  resolveAsyncComponents
+&#125; from &#39;..&#x2F;util&#x2F;resolve-components&#39;
+
+&#x2F;&#x2F; 定义基类 History
+export class History &#123;
+  router: Router;
+  base: string;
+  current: Route;
+  pending: ?Route;
+  cb: (r: Route) &#x3D;&gt; void;
+  ready: boolean;
+  readyCbs: Array&lt;Function&gt;;
+  readyErrorCbs: Array&lt;Function&gt;;
+  errorCbs: Array&lt;Function&gt;;
+
+  &#x2F;&#x2F; 在子类中实现以下方法
+  +go: (n: number) &#x3D;&gt; void;  &#x2F;&#x2F; 只读的 go 方法
+  +push: (loc: RawLocation) &#x3D;&gt; void;  &#x2F;&#x2F; 只读的 push 方法
+  +replace: (loc: RawLocation) &#x3D;&gt; void;  &#x2F;&#x2F; 只读的 replace 方法
+  +ensureURL: (push?: boolean) &#x3D;&gt; void;  &#x2F;&#x2F; 只读的 ensureURL 方法，若当前路由的路径与实际路径不等时，则 push 或 replace
+  +getCurrentLocation: () &#x3D;&gt; string;  &#x2F;&#x2F; 只读的 getCurrentLocation 方法，获取当前实际的路径
+
+  constructor (router: Router, base: ?string) &#123;
+    this.router &#x3D; router
+    this.base &#x3D; normalizeBase(base)  &#x2F;&#x2F; 归一化 base URL
+    &#x2F;&#x2F; start with a route object that stands for &quot;nowhere&quot;
+    this.current &#x3D; START
+    this.pending &#x3D; null
+    this.ready &#x3D; false  &#x2F;&#x2F; 完成路由初始导航后变为 true
+    this.readyCbs &#x3D; []
+    this.readyErrorCbs &#x3D; []
+    this.errorCbs &#x3D; []
+  &#125;
+
+  listen (cb: Function) &#123;
+    this.cb &#x3D; cb
+  &#125;
+
+  &#x2F;&#x2F; 该方法把一个回调排队，在路由完成初始导航时调用，这意味着它可以解析所有的异步进入钩子和路由初始化相关联的异步组件。
+  &#x2F;&#x2F; 这可以有效确保服务端渲染时服务端和客户端输出的一致。
+  onReady (cb: Function, errorCb: ?Function) &#123;
+    if (this.ready) &#123;
+      cb()
+    &#125; else &#123;
+      this.readyCbs.push(cb)
+      if (errorCb) &#123;
+        this.readyErrorCbs.push(errorCb)
+      &#125;
+    &#125;
+  &#125;
+
+  &#x2F;&#x2F; 注册一个回调，该回调会在路由导航过程中出错时被调用。
+  onError (errorCb: Function) &#123;
+    this.errorCbs.push(errorCb)
+  &#125;
+
+  &#x2F;&#x2F; 路径跳转
+  transitionTo (location: RawLocation, onComplete?: Function, onAbort?: Function) &#123;
+    const route &#x3D; this.router.match(location, this.current)
+    this.confirmTransition(route, () &#x3D;&gt; &#123;  &#x2F;&#x2F; 执行跳转
+      this.updateRoute(route)
+      onComplete &amp;&amp; onComplete(route)
+      this.ensureURL()  &#x2F;&#x2F; 切换路径
+
+      &#x2F;&#x2F; fire ready cbs once
+      if (!this.ready) &#123;
+        this.ready &#x3D; true
+        this.readyCbs.forEach(cb &#x3D;&gt; &#123; cb(route) &#125;)  &#x2F;&#x2F; 路由完成初始导航后回调
+      &#125;
+    &#125;, err &#x3D;&gt; &#123;
+      if (onAbort) &#123;
+        onAbort(err)
+      &#125;
+      if (err &amp;&amp; !this.ready) &#123;
+        &#x2F;&#x2F; 初始化路由解析运行出错
+        this.ready &#x3D; true
+        this.readyErrorCbs.forEach(cb &#x3D;&gt; &#123; cb(err) &#125;)
+      &#125;
+    &#125;)
+  &#125;
+
+  &#x2F;&#x2F; transition 中进行修改 url 的操作，history 栈操作在不同 History 子类中实现
+  confirmTransition (route: Route, onComplete: Function, onAbort?: Function) &#123;
+    const current &#x3D; this.current
+    const abort &#x3D; err &#x3D;&gt; &#123;
+      if (isError(err)) &#123;
+        if (this.errorCbs.length) &#123;
+          this.errorCbs.forEach(cb &#x3D;&gt; &#123; cb(err) &#125;)
+        &#125; else &#123;
+          warn(false, &#39;uncaught error during route navigation:&#39;)
+          console.error(err)
+        &#125;
+      &#125;
+      onAbort &amp;&amp; onAbort(err)
+    &#125;
+    if (
+      isSameRoute(route, current) &amp;&amp;
+      &#x2F;&#x2F; in the case the route map has been dynamically appended to
+      route.matched.length &#x3D;&#x3D;&#x3D; current.matched.length
+    ) &#123;
+      this.ensureURL()
+      return abort()
+    &#125;
+
+    const &#123;
+      updated,
+      deactivated,
+      activated
+    &#125; &#x3D; resolveQueue(this.current.matched, route.matched)
+
+    const queue: Array&lt;?NavigationGuard&gt; &#x3D; [].concat(
+      &#x2F;&#x2F; in-component leave guards
+      extractLeaveGuards(deactivated),
+      &#x2F;&#x2F; global before hooks
+      this.router.beforeHooks,
+      &#x2F;&#x2F; in-component update hooks
+      extractUpdateHooks(updated),
+      &#x2F;&#x2F; in-config enter guards
+      activated.map(m &#x3D;&gt; m.beforeEnter),
+      &#x2F;&#x2F; async components
+      resolveAsyncComponents(activated)
+    )
+
+    this.pending &#x3D; route
+    const iterator &#x3D; (hook: NavigationGuard, next) &#x3D;&gt; &#123;
+      if (this.pending !&#x3D;&#x3D; route) &#123;
+        return abort()
+      &#125;
+      try &#123;
+        hook(route, current, (to: any) &#x3D;&gt; &#123;
+          if (to &#x3D;&#x3D;&#x3D; false || isError(to)) &#123;
+            &#x2F;&#x2F; next(false) -&gt; abort navigation, ensure current URL
+            this.ensureURL(true)
+            abort(to)
+          &#125; else if (
+            typeof to &#x3D;&#x3D;&#x3D; &#39;string&#39; ||
+            (typeof to &#x3D;&#x3D;&#x3D; &#39;object&#39; &amp;&amp; (
+              typeof to.path &#x3D;&#x3D;&#x3D; &#39;string&#39; ||
+              typeof to.name &#x3D;&#x3D;&#x3D; &#39;string&#39;
+            ))
+          ) &#123;
+            &#x2F;&#x2F; next(&#39;&#x2F;&#39;) or next(&#123; path: &#39;&#x2F;&#39; &#125;) -&gt; redirect
+            abort()
+            if (typeof to &#x3D;&#x3D;&#x3D; &#39;object&#39; &amp;&amp; to.replace) &#123;
+              this.replace(to)
+            &#125; else &#123;
+              this.push(to)
+            &#125;
+          &#125; else &#123;
+            &#x2F;&#x2F; confirm transition and pass on the value
+            next(to)
+          &#125;
+        &#125;)
+      &#125; catch (e) &#123;
+        abort(e)
+      &#125;
+    &#125;
+
+    runQueue(queue, iterator, () &#x3D;&gt; &#123;
+      const postEnterCbs &#x3D; []
+      const isValid &#x3D; () &#x3D;&gt; this.current &#x3D;&#x3D;&#x3D; route
+      &#x2F;&#x2F; wait until async components are resolved before
+      &#x2F;&#x2F; extracting in-component enter guards
+      const enterGuards &#x3D; extractEnterGuards(activated, postEnterCbs, isValid)
+      const queue &#x3D; enterGuards.concat(this.router.resolveHooks)
+      runQueue(queue, iterator, () &#x3D;&gt; &#123;
+        if (this.pending !&#x3D;&#x3D; route) &#123;
+          return abort()
+        &#125;
+        this.pending &#x3D; null
+        onComplete(route)
+        if (this.router.app) &#123;
+          this.router.app.$nextTick(() &#x3D;&gt; &#123;
+            postEnterCbs.forEach(cb &#x3D;&gt; &#123; cb() &#125;)
+          &#125;)
+        &#125;
+      &#125;)
+    &#125;)
+  &#125;
+
+  updateRoute (route: Route) &#123;
+    const prev &#x3D; this.current
+    this.current &#x3D; route
+    this.cb &amp;&amp; this.cb(route)
+    this.router.afterHooks.forEach(hook &#x3D;&gt; &#123;
+      hook &amp;&amp; hook(route, prev)
+    &#125;)
+  &#125;
+&#125;
+
+&#x2F;&#x2F; 归一化 base URL
+function normalizeBase (base: ?string): string &#123;
+  if (!base) &#123;
+    if (inBrowser) &#123;
+      &#x2F;&#x2F; 检查 &lt;base&gt; 标签
+      &#x2F;&#x2F; https:&#x2F;&#x2F;developer.mozilla.org&#x2F;en-US&#x2F;docs&#x2F;Web&#x2F;HTML&#x2F;Element&#x2F;base
+      const baseEl &#x3D; document.querySelector(&#39;base&#39;)
+      base &#x3D; (baseEl &amp;&amp; baseEl.getAttribute(&#39;href&#39;)) || &#39;&#x2F;&#39;
+      &#x2F;&#x2F; 去除协议、域名、端口，不使用完整 URL
+      base &#x3D; base.replace(&#x2F;^https?:\&#x2F;\&#x2F;[^\&#x2F;]+&#x2F;, &#39;&#39;)
+    &#125; else &#123;
+      base &#x3D; &#39;&#x2F;&#39; &#x2F;&#x2F; 非浏览器环境以 &#x2F; 为 base URL
+    &#125;
+  &#125;
+  &#x2F;&#x2F; 使 URL 以 &#x2F; 开头
+  if (base.charAt(0) !&#x3D;&#x3D; &#39;&#x2F;&#39;) &#123;
+    base &#x3D; &#39;&#x2F;&#39; + base
+  &#125;
+  &#x2F;&#x2F; 移除末尾的 &#x2F;
+  return base.replace(&#x2F;\&#x2F;$&#x2F;, &#39;&#39;)
+&#125;
+
+function resolveQueue (
+  current: Array&lt;RouteRecord&gt;,
+  next: Array&lt;RouteRecord&gt;
+): &#123;
+  updated: Array&lt;RouteRecord&gt;,
+  activated: Array&lt;RouteRecord&gt;,
+  deactivated: Array&lt;RouteRecord&gt;
+&#125; &#123;
+  let i
+  const max &#x3D; Math.max(current.length, next.length)
+  for (i &#x3D; 0; i &lt; max; i++) &#123;
+    if (current[i] !&#x3D;&#x3D; next[i]) &#123;
+      break
+    &#125;
+  &#125;
+  return &#123;
+    updated: next.slice(0, i),
+    activated: next.slice(i),
+    deactivated: current.slice(i)
+  &#125;
+&#125;
+
+function extractGuards (
+  records: Array&lt;RouteRecord&gt;,
+  name: string,
+  bind: Function,
+  reverse?: boolean
+): Array&lt;?Function&gt; &#123;
+  const guards &#x3D; flatMapComponents(records, (def, instance, match, key) &#x3D;&gt; &#123;
+    const guard &#x3D; extractGuard(def, name)
+    if (guard) &#123;
+      return Array.isArray(guard)
+        ? guard.map(guard &#x3D;&gt; bind(guard, instance, match, key))
+        : bind(guard, instance, match, key)
+    &#125;
+  &#125;)
+  return flatten(reverse ? guards.reverse() : guards)
+&#125;
+
+function extractGuard (
+  def: Object | Function,
+  key: string
+): NavigationGuard | Array&lt;NavigationGuard&gt; &#123;
+  if (typeof def !&#x3D;&#x3D; &#39;function&#39;) &#123;
+    &#x2F;&#x2F; extend now so that global mixins are applied.
+    def &#x3D; _Vue.extend(def)
+  &#125;
+  return def.options[key]
+&#125;
+
+function extractLeaveGuards (deactivated: Array&lt;RouteRecord&gt;): Array&lt;?Function&gt; &#123;
+  return extractGuards(deactivated, &#39;beforeRouteLeave&#39;, bindGuard, true)
+&#125;
+
+function extractUpdateHooks (updated: Array&lt;RouteRecord&gt;): Array&lt;?Function&gt; &#123;
+  return extractGuards(updated, &#39;beforeRouteUpdate&#39;, bindGuard)
+&#125;
+
+function bindGuard (guard: NavigationGuard, instance: ?_Vue): ?NavigationGuard &#123;
+  if (instance) &#123;
+    return function boundRouteGuard () &#123;
+      return guard.apply(instance, arguments)
+    &#125;
+  &#125;
+&#125;
+
+function extractEnterGuards (
+  activated: Array&lt;RouteRecord&gt;,
+  cbs: Array&lt;Function&gt;,
+  isValid: () &#x3D;&gt; boolean
+): Array&lt;?Function&gt; &#123;
+  return extractGuards(activated, &#39;beforeRouteEnter&#39;, (guard, _, match, key) &#x3D;&gt; &#123;
+    return bindEnterGuard(guard, match, key, cbs, isValid)
+  &#125;)
+&#125;
+
+function bindEnterGuard (
+  guard: NavigationGuard,
+  match: RouteRecord,
+  key: string,
+  cbs: Array&lt;Function&gt;,
+  isValid: () &#x3D;&gt; boolean
+): NavigationGuard &#123;
+  return function routeEnterGuard (to, from, next) &#123;
+    return guard(to, from, cb &#x3D;&gt; &#123;
+      next(cb)
+      if (typeof cb &#x3D;&#x3D;&#x3D; &#39;function&#39;) &#123;
+        cbs.push(() &#x3D;&gt; &#123;
+          &#x2F;&#x2F; #750
+          &#x2F;&#x2F; if a router-view is wrapped with an out-in transition,
+          &#x2F;&#x2F; the instance may not have been registered at this time.
+          &#x2F;&#x2F; we will need to poll for registration until current route
+          &#x2F;&#x2F; is no longer valid.
+          poll(cb, match.instances, key, isValid)
+        &#125;)
+      &#125;
+    &#125;)
+  &#125;
+&#125;
+
+function poll (
+  cb: any, &#x2F;&#x2F; somehow flow cannot infer this is a function
+  instances: Object,
+  key: string,
+  isValid: () &#x3D;&gt; boolean
+) &#123;
+  if (instances[key]) &#123;
+    cb(instances[key])
+  &#125; else if (isValid()) &#123;
+    setTimeout(() &#x3D;&gt; &#123;
+      poll(cb, instances, key, isValid)
+    &#125;, 16)
+  &#125;
+&#125;</code></pre>
+
+<h4 id="abstract-js"><a href="#abstract-js" class="headerlink" title="abstract.js"></a><a target="_blank" rel="noopener" href="https://github.com/vuejs/vue-router/blob/v3.0.1/src/history/abstract.js">abstract.js</a></h4><p>最简单的 history 类，适用于非浏览器环境</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;* @flow *&#x2F;
+
+import type Router from &#39;..&#x2F;index&#39;
+import &#123; History &#125; from &#39;.&#x2F;base&#39;
+
+export class AbstractHistory extends History &#123;
+  index: number;
+  stack: Array&lt;Route&gt;;
+
+  constructor (router: Router, base: ?string) &#123;
+    super(router, base)
+    this.stack &#x3D; []  &#x2F;&#x2F; history 栈
+    this.index &#x3D; -1  &#x2F;&#x2F; 栈指针
+  &#125;
+
+  push (location: RawLocation, onComplete?: Function, onAbort?: Function) &#123;
+    this.transitionTo(location, route &#x3D;&gt; &#123;  &#x2F;&#x2F; 调用父类中的 transitionTo 进行路径跳转
+      this.stack &#x3D; this.stack.slice(0, this.index + 1).concat(route)  &#x2F;&#x2F; 入栈
+      this.index++
+      onComplete &amp;&amp; onComplete(route)
+    &#125;, onAbort)
+  &#125;
+
+  replace (location: RawLocation, onComplete?: Function, onAbort?: Function) &#123;
+    this.transitionTo(location, route &#x3D;&gt; &#123;
+      this.stack &#x3D; this.stack.slice(0, this.index).concat(route)  &#x2F;&#x2F; replace 栈顶 route，不改变栈指针
+      onComplete &amp;&amp; onComplete(route)
+    &#125;, onAbort)
+  &#125;
+
+  go (n: number) &#123;
+    const targetIndex &#x3D; this.index + n
+    if (targetIndex &lt; 0 || targetIndex &gt;&#x3D; this.stack.length) &#123;
+      return
+    &#125;
+    const route &#x3D; this.stack[targetIndex]
+    this.confirmTransition(route, () &#x3D;&gt; &#123;
+      this.index &#x3D; targetIndex
+      this.updateRoute(route)
+    &#125;)
+  &#125;
+
+  getCurrentLocation () &#123;
+    const current &#x3D; this.stack[this.stack.length - 1]
+    return current ? current.fullPath : &#39;&#x2F;&#39;
+  &#125;
+
+  ensureURL () &#123;
+    &#x2F;&#x2F; noop
+  &#125;
+&#125;</code></pre>
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="Hanai 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/reward/alipay.png" alt="Hanai 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/vue-router/" rel="tag"># vue-router</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/12/vue-router-source-code-full-analysis-util.html" rel="prev" title="VueRouter 源码全解：util">
+                  <i class="fa fa-chevron-left"></i> VueRouter 源码全解：util
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/12/vue-router-source-code-full-analysis-0.html" rel="next" title="VueRouter 源码全解：0">
+                  VueRouter 源码全解：0 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hanai</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">182k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">5:32</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.loli.net/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/components/prism-core.min.js" integrity="sha256-c9n/9oG7sBeCouNZfRg5tO8VCCQXGPLiDPJNaF5Qgic=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/autoloader/prism-autoloader.min.js" integrity="sha256-RtKI23ujTCOg3jNK74NK61WGNYbtBWcqh6UKebC2AQo=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/line-numbers/prism-line-numbers.min.js" integrity="sha256-K837BwIyiXo5k/9fCYgqUyA14bN4/Ve9P2SIT0KmZD0=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="//cdnjs.loli.net/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"//cdnjs.loli.net/ajax/libs/mermaid/8.14.0/mermaid.min.js","integrity":"sha256-7wT34TI0pEBeEFoi4z+vhuSddGh6vUTMWdqJ2SDe2jg="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+<script>
+(function () {
+  var createContainer = function (xml) {
+    var container = document.createElement('div');
+    container.className = 'mxgraph';
+    container.style = 'max-width:100%;border:1px solid transparent;';
+    var attr = {
+      highlight: '#0000ff',
+      nav: true,
+      resize: true,
+      toolbar: 'zoom layers lightbox',
+      edit: '_blank',
+      xml: xml
+    };
+    container.setAttribute('data-mxgraph', JSON.stringify(attr));
+    return container;
+  };
+
+  var fetchXml = function (src) {
+    return fetch(src).then(function (res) {
+      return res.text();
+    });
+  };
+
+  var insertDrawioGraphElement = function (src, target) {
+    return fetchXml(src).then(function (xml) {
+      var container = createContainer(xml);
+      target.parentNode.insertBefore(container, target);
+      target.parentNode.removeChild(target);
+
+      return container;
+    });
+  }
+
+  var nodes = document.querySelectorAll('.drawio-placeholder');
+
+  if (nodes.length) {
+    var jobs = Array.prototype.slice.call(nodes).map(function (node) {
+      var src = node.getAttribute('data-src');
+      return insertDrawioGraphElement(src, node);
+    });
+    NexT.utils.getScript('/lib/drawio_viewer.min.js', () => {
+      jobs.forEach(function (job) {
+        job.then(function (element) {
+          try {
+            element.innerHTML = "";
+            GraphViewer.createViewerForElement(element)
+          } catch (e) { throw element.innerHTML = e.message, e; }
+        });
+      })
+    }, window.GraphViewer);
+  }
+}())
+</script>
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"//cdnjs.loli.net/ajax/libs/mathjax/3.2.0/es5/tex-svg-full.js"}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqusjs.css" integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin="anonymous">
+
+<script class="next-config" data-name="disqusjs" type="application/json">{"enable":true,"api":"https://disqus.skk.moe/disqus/","apikey":"FYoVMcKqcN4CqNtu12XmvvZ1VbdbnSv6Vwsm8N6ncNTXWK8ekX3XEzMcuf5qprK4","shortname":"blog-ihanai","js":{"url":"//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqus.js","integrity":"sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw="}}</script>
+<script src="/js/third-party/comments/disqusjs.js"></script>
+
+</body>
+</html>

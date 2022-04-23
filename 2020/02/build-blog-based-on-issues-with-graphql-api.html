@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+<link rel="preconnect" href="//fonts.loli.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.loli.net/css?family=Lato:300,300italic,400,400italic,700,700italic%7CSource+Code+Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.ihanai.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqusjs","storage":true,"lazyload":true,"nav":null,"activeClass":"disqusjs"},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":true,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="身边有很多人把 GitHub 的 Issues 用作个人博客，它具有写作方便、免于部署的优点，但是由于需要从仓库的 Issues 访问，定制化程度很低。 GitHub 提供了访问仓库的 Issues 的 API，我们可以自己开发定制前端页面，发布到 GitHub Pages，前端调用 API 读取 Issues 动态渲染页面。这样我们依旧能够在 GitHub 上新建&#x2F;修改文章，同时不用再">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用 GraphQL API 构建基于 Issues 的博客">
+<meta property="og:url" content="https://blog.ihanai.com/2020/02/build-blog-based-on-issues-with-graphql-api.html">
+<meta property="og:site_name" content="寒霭的部落格">
+<meta property="og:description" content="身边有很多人把 GitHub 的 Issues 用作个人博客，它具有写作方便、免于部署的优点，但是由于需要从仓库的 Issues 访问，定制化程度很低。 GitHub 提供了访问仓库的 Issues 的 API，我们可以自己开发定制前端页面，发布到 GitHub Pages，前端调用 API 读取 Issues 动态渲染页面。这样我们依旧能够在 GitHub 上新建&#x2F;修改文章，同时不用再">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-02-11T15:41:05.000Z">
+<meta property="article:modified_time" content="2020-02-15T06:15:31.000Z">
+<meta property="article:author" content="Hanai">
+<meta property="article:tag" content="Serverless">
+<meta property="article:tag" content="GraphQL">
+<meta property="article:tag" content="GitHub">
+<meta property="article:tag" content="Blog">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://blog.ihanai.com/2020/02/build-blog-based-on-issues-with-graphql-api.html">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.ihanai.com/2020/02/build-blog-based-on-issues-with-graphql-api.html","path":"2020/02/build-blog-based-on-issues-with-graphql-api.html","title":"使用 GraphQL API 构建基于 Issues 的博客"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>使用 GraphQL API 构建基于 Issues 的博客 | 寒霭的部落格</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-106796055-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-106796055-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">寒霭的部落格</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">爱技术，爱生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tips"><a href="/categories/Tip/" rel="section"><i class="fa fa-tags fa-fw"></i>点滴</a></li><li class="menu-item menu-item-investment"><a href="/categories/Investment/" rel="section"><i class="fa fa-hand-holding-usd fa-fw"></i>投资</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-hashtag fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tools"><a href="/pages/tools/" rel="section"><i class="fa fa-toolbox fa-fw"></i>工具</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.</span> <span class="nav-text">简单实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E5%85%A8%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.</span> <span class="nav-text">安全实现</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Hanai</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">92</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">177</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hanai" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hanai" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:ihanai1991@gmail.com" title="E-Mail → mailto:ihanai1991@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.ihanai.com/2020/02/build-blog-based-on-issues-with-graphql-api.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hanai">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="使用 GraphQL API 构建基于 Issues 的博客 | 寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用 GraphQL API 构建基于 Issues 的博客
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-02-11 23:41:05" itemprop="dateCreated datePublished" datetime="2020-02-11T23:41:05+08:00">2020-02-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020-02-15 14:15:31" itemprop="dateModified" datetime="2020-02-15T14:15:31+08:00">2020-02-15</time>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.6k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>5 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>身边有很多人把 GitHub 的 Issues 用作个人博客，它具有写作方便、免于部署的优点，但是由于需要从仓库的 Issues 访问，定制化程度很低。</p>
+<p>GitHub 提供了访问仓库的 Issues 的 API，我们可以自己开发定制前端页面，发布到 GitHub Pages，前端调用 API 读取 Issues 动态渲染页面。这样我们依旧能够在 GitHub 上新建&#x2F;修改文章，同时不用再去进行发布操作。</p>
+<h3 id="简单实现"><a href="#简单实现" class="headerlink" title="简单实现"></a>简单实现</h3><div class="drawio-placeholder" data-src="/assets/2020/02/simple-github-issues-blog-arch.drawio"></div>
+
+<p>Github 当前提供了 2 种版本的 API：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://developer.github.com/v3/">REST API v3</a></li>
+<li><a target="_blank" rel="noopener" href="https://developer.github.com/v4/">GraphQL API v4</a></li>
+</ul>
+<p>它们都能满足我们的需求，但是 REST 版本返回的数据较多，里面有很多我们不需要的内容，所以这里我们选择可定制性更强的 GraphQL 版本。</p>
+<p>查询语句的构建可以在 <a target="_blank" rel="noopener" href="https://developer.github.com/v4/explorer/">GraphQL API Explorer</a> 进行。</p>
+<span id="more"></span>
+
+<p>查询语句：</p>
+<pre class="line-numbers language-graphql" data-language="graphql"><code class="language-graphql">&#123;
+  search(type: ISSUE, query: &quot;label:tip repo:hanai&#x2F;blog_source&quot;, first: 10) &#123;
+    nodes &#123;
+      ... on Issue &#123;
+        title
+        body
+        bodyHTML
+        createdAt
+        labels(first: 8) &#123;
+          nodes &#123;
+            name
+          &#125;
+        &#125;
+        lastEditedAt
+      &#125;
+    &#125;
+  &#125;
+&#125;</code></pre>
+
+<p>前端页面请求 API：</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">fetch(&quot;https:&#x2F;&#x2F;api.github.com&#x2F;graphql&quot;, &#123;
+  method: &quot;POST&quot;,
+  headers: &#123;
+    authorization: &quot;bearer &#123;&#123;token&#125;&#125;&quot;
+  &#125;,
+  body: JSON.stringify(&#123;
+    query: query
+  &#125;)
+&#125;)
+  .then(res &#x3D;&gt; res.json())
+  .then(console.log);</code></pre>
+
+<h3 id="安全实现"><a href="#安全实现" class="headerlink" title="安全实现"></a>安全实现</h3><p>直接将自己 GitHub 的 access token 暴露在公网环境是非常危险的（本例中 access token 对公开仓库具有写权限），实际使用中可以借助云服务商提供的函数计算服务作为网关来请求 GitHub 的 API：</p>
+<div class="drawio-placeholder" data-src="/assets/2020/02/safe-github-issues-blog-arch.drawio"></div>
+
+<p>以阿里云为例，代码如下：</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">const process &#x3D; require(&#39;process&#39;);
+const https &#x3D; require(&quot;https&quot;);
+
+module.exports.handler &#x3D; function (req, resp, context) &#123;
+    const &#123; queries, headers &#125; &#x3D; req;
+    const &#123; origin &#125; &#x3D; headers;
+
+    const ak &#x3D; process.env.ak;
+
+    if (&#x2F;\.ihanai\.com&#x2F;.test(origin)) &#123;
+        const postData &#x3D; JSON.stringify(&#123;
+            &#39;query&#39;: &#96;&#123;
+  search(type: ISSUE, query: &quot;label:tip repo:hanai&#x2F;blog_source&quot;, first: 10) &#123;
+    nodes &#123;
+      ... on Issue &#123;
+        title
+        body
+        bodyHTML
+        createdAt
+        labels(first: 8) &#123;
+          nodes &#123;
+            name
+          &#125;
+        &#125;
+        lastEditedAt
+      &#125;
+    &#125;
+  &#125;
+&#125;&#96;
+        &#125;);
+        const httpReq &#x3D; https.request(&#123;
+            host: &#39;api.github.com&#39;,
+            path: &#39;&#x2F;graphql&#39;,
+            method: &#39;POST&#39;,
+            headers: &#123;
+                authorization: &quot;bearer &quot; + ak,
+                &#39;Content-Length&#39;: Buffer.byteLength(postData),
+                &#39;user-agent&#39;: &quot;Mozilla&#x2F;5.0 (X11; Linux x86_64) AppleWebKit&#x2F;537.36 (KHTML, like Gecko) Chrome&#x2F;80.0.3987.100 Safari&#x2F;537.36&quot;
+            &#125;
+        &#125;, res &#x3D;&gt; &#123;
+            res.setEncoding(&#39;utf8&#39;);
+            const chunks &#x3D; [];
+            res.on(&#39;data&#39;, (chunk) &#x3D;&gt; &#123;
+                chunks.push(chunk);
+            &#125;);
+            res.on(&#39;end&#39;, () &#x3D;&gt; &#123;
+                resp.setStatusCode(200);
+                resp.setHeader(&#39;content-type&#39;, &#39;application&#x2F;json&#39;);
+                resp.setHeader(&#39;Access-Control-Allow-Origin&#39;, origin);
+                const json &#x3D; JSON.parse(chunks.join(&#39;&#39;));
+                resp.send(JSON.stringify(json.data.search));
+            &#125;);
+        &#125;);
+        httpReq.write(postData);
+        httpReq.end();
+    &#125; else &#123;
+        resp.setHeader(&#39;Access-Control-Allow-Origin&#39;, &#39;https:&#x2F;&#x2F;blog.ihanai.com&#39;);
+        resp.send(&#39;&#39;);
+    &#125;
+&#125;</code></pre>
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="Hanai 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/reward/alipay.png" alt="Hanai 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Serverless/" rel="tag"># Serverless</a>
+              <a href="/tags/GraphQL/" rel="tag"># GraphQL</a>
+              <a href="/tags/GitHub/" rel="tag"># GitHub</a>
+              <a href="/tags/Blog/" rel="tag"># Blog</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/02/make-access-control-allow-origin-support-multiple-origin.html" rel="prev" title="使 Access-Control-Allow-Origin 支持多个 Origin">
+                  <i class="fa fa-chevron-left"></i> 使 Access-Control-Allow-Origin 支持多个 Origin
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/02/batch-modify-git-commiter.html" rel="next" title="批量修改 git 的 commiter">
+                  批量修改 git 的 commiter <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hanai</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">182k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">5:32</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.loli.net/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/components/prism-core.min.js" integrity="sha256-c9n/9oG7sBeCouNZfRg5tO8VCCQXGPLiDPJNaF5Qgic=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/autoloader/prism-autoloader.min.js" integrity="sha256-RtKI23ujTCOg3jNK74NK61WGNYbtBWcqh6UKebC2AQo=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/line-numbers/prism-line-numbers.min.js" integrity="sha256-K837BwIyiXo5k/9fCYgqUyA14bN4/Ve9P2SIT0KmZD0=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="//cdnjs.loli.net/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"//cdnjs.loli.net/ajax/libs/mermaid/8.14.0/mermaid.min.js","integrity":"sha256-7wT34TI0pEBeEFoi4z+vhuSddGh6vUTMWdqJ2SDe2jg="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+<script>
+(function () {
+  var createContainer = function (xml) {
+    var container = document.createElement('div');
+    container.className = 'mxgraph';
+    container.style = 'max-width:100%;border:1px solid transparent;';
+    var attr = {
+      highlight: '#0000ff',
+      nav: true,
+      resize: true,
+      toolbar: 'zoom layers lightbox',
+      edit: '_blank',
+      xml: xml
+    };
+    container.setAttribute('data-mxgraph', JSON.stringify(attr));
+    return container;
+  };
+
+  var fetchXml = function (src) {
+    return fetch(src).then(function (res) {
+      return res.text();
+    });
+  };
+
+  var insertDrawioGraphElement = function (src, target) {
+    return fetchXml(src).then(function (xml) {
+      var container = createContainer(xml);
+      target.parentNode.insertBefore(container, target);
+      target.parentNode.removeChild(target);
+
+      return container;
+    });
+  }
+
+  var nodes = document.querySelectorAll('.drawio-placeholder');
+
+  if (nodes.length) {
+    var jobs = Array.prototype.slice.call(nodes).map(function (node) {
+      var src = node.getAttribute('data-src');
+      return insertDrawioGraphElement(src, node);
+    });
+    NexT.utils.getScript('/lib/drawio_viewer.min.js', () => {
+      jobs.forEach(function (job) {
+        job.then(function (element) {
+          try {
+            element.innerHTML = "";
+            GraphViewer.createViewerForElement(element)
+          } catch (e) { throw element.innerHTML = e.message, e; }
+        });
+      })
+    }, window.GraphViewer);
+  }
+}())
+</script>
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"//cdnjs.loli.net/ajax/libs/mathjax/3.2.0/es5/tex-svg-full.js"}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqusjs.css" integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin="anonymous">
+
+<script class="next-config" data-name="disqusjs" type="application/json">{"enable":true,"api":"https://disqus.skk.moe/disqus/","apikey":"FYoVMcKqcN4CqNtu12XmvvZ1VbdbnSv6Vwsm8N6ncNTXWK8ekX3XEzMcuf5qprK4","shortname":"blog-ihanai","js":{"url":"//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqus.js","integrity":"sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw="}}</script>
+<script src="/js/third-party/comments/disqusjs.js"></script>
+
+</body>
+</html>

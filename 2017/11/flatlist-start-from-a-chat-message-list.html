@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+<link rel="preconnect" href="//fonts.loli.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.loli.net/css?family=Lato:300,300italic,400,400italic,700,700italic%7CSource+Code+Pro:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.ihanai.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqusjs","storage":true,"lazyload":true,"nav":null,"activeClass":"disqusjs"},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":true,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="缘起昨天看到了 Android 上 Telegram 消息列表的动效，觉得比较有趣，便打算试着用 ReactNative 模仿一下。 PS：视频是从 macOS 端录制的，但是效果是一致的。  可以看到列表可视区域内最下面一条消息的用户的头像会随着列表的滚动而上下移动位置。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FlatList: 从一个聊天消息列表谈起">
+<meta property="og:url" content="https://blog.ihanai.com/2017/11/flatlist-start-from-a-chat-message-list.html">
+<meta property="og:site_name" content="寒霭的部落格">
+<meta property="og:description" content="缘起昨天看到了 Android 上 Telegram 消息列表的动效，觉得比较有趣，便打算试着用 ReactNative 模仿一下。 PS：视频是从 macOS 端录制的，但是效果是一致的。  可以看到列表可视区域内最下面一条消息的用户的头像会随着列表的滚动而上下移动位置。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://blog.ihanai.com/images/2017/12/message-list-container-component-struct.png">
+<meta property="og:image" content="https://blog.ihanai.com/images/2017/12/message-item-component-struct.png">
+<meta property="og:image" content="https://blog.ihanai.com/images/2017/12/screenshot-message-list-avatar-wrong-position.png">
+<meta property="article:published_time" content="2017-11-24T22:48:15.000Z">
+<meta property="article:modified_time" content="2022-04-23T16:18:32.804Z">
+<meta property="article:author" content="Hanai">
+<meta property="article:tag" content="ReactNative">
+<meta property="article:tag" content="React">
+<meta property="article:tag" content="FlatList">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.ihanai.com/images/2017/12/message-list-container-component-struct.png">
+
+
+<link rel="canonical" href="https://blog.ihanai.com/2017/11/flatlist-start-from-a-chat-message-list.html">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.ihanai.com/2017/11/flatlist-start-from-a-chat-message-list.html","path":"2017/11/flatlist-start-from-a-chat-message-list.html","title":"FlatList: 从一个聊天消息列表谈起"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>FlatList: 从一个聊天消息列表谈起 | 寒霭的部落格</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-106796055-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-106796055-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">寒霭的部落格</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">爱技术，爱生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tips"><a href="/categories/Tip/" rel="section"><i class="fa fa-tags fa-fw"></i>点滴</a></li><li class="menu-item menu-item-investment"><a href="/categories/Investment/" rel="section"><i class="fa fa-hand-holding-usd fa-fw"></i>投资</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-hashtag fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tools"><a href="/pages/tools/" rel="section"><i class="fa fa-toolbox fa-fw"></i>工具</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BC%98%E8%B5%B7"><span class="nav-number">1.</span> <span class="nav-text">缘起</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%84%E4%BB%B6%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">组件结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%96%E5%B1%82%E5%AE%B9%E5%99%A8"><span class="nav-number">2.1.</span> <span class="nav-text">外层容器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MessageItem"><span class="nav-number">2.2.</span> <span class="nav-text">MessageItem</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9B%B4%E8%BF%9B%E4%B8%80%E6%AD%A5"><span class="nav-number">4.</span> <span class="nav-text">更进一步</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Hanai</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">92</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">177</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hanai" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hanai" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:ihanai1991@gmail.com" title="E-Mail → mailto:ihanai1991@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.ihanai.com/2017/11/flatlist-start-from-a-chat-message-list.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hanai">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="FlatList: 从一个聊天消息列表谈起 | 寒霭的部落格">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          FlatList: 从一个聊天消息列表谈起
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017-11-25 06:48:15" itemprop="dateCreated datePublished" datetime="2017-11-25T06:48:15+08:00">2017-11-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-04-24 00:18:32" itemprop="dateModified" datetime="2022-04-24T00:18:32+08:00">2022-04-24</time>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>15k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>27 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h3 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h3><p>昨天看到了 Android 上 Telegram 消息列表的动效，觉得比较有趣，便打算试着用 ReactNative 模仿一下。</p>
+<p>PS：视频是从 macOS 端录制的，但是效果是一致的。</p>
+<p><video controls src="/images/2017/11/telegram-message-list.mp4"></video></p>
+<p>可以看到列表可视区域内最下面一条消息的用户的头像会随着列表的滚动而上下移动位置。</p>
+<span id="more"></span>
+
+<h3 id="组件结构"><a href="#组件结构" class="headerlink" title="组件结构"></a>组件结构</h3><h4 id="外层容器"><a href="#外层容器" class="headerlink" title="外层容器"></a>外层容器</h4><p>我们只关注中间的消息列表，所以头部和输入栏用 Placeholder 替代。列表使用 ReactNative 最新引入的 <code>FlatList</code>。</p>
+<p><img src="/images/2017/12/message-list-container-component-struct.png" alt="container component struct"></p>
+<h4 id="MessageItem"><a href="#MessageItem" class="headerlink" title="MessageItem"></a>MessageItem</h4><p>每一条消息分为左右两个部分，左侧是头像区域，头像图片在这里上下移动，右侧是消息气泡。</p>
+<p><img src="/images/2017/12/message-item-component-struct.png" alt="message item component struct"></p>
+<h3 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h3><p>先来设计消息项的数据结构，这里我使用 <code>faker</code> 来生成伪数据。</p>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">&#x2F;&#x2F; util.js
+import faker from &#39;faker&#39;;
+import _ from &#39;lodash&#39;;
+
+export const generateMsg &#x3D; () &#x3D;&gt; &#123;
+  const id &#x3D; faker.random.uuid();
+  const avatar &#x3D; faker.internet.avatar();
+  const author &#x3D; faker.internet.userName();
+  const content &#x3D; faker.lorem[_.sample([&#39;sentence&#39;, &#39;sentences&#39;, &#39;word&#39;, &#39;words&#39;])]();
+  const date &#x3D; faker.date.past();
+
+  const msg &#x3D; &#123;
+    id,
+    avatar,
+    author,
+    content,
+    date,
+  &#125;;
+
+  return msg;
+&#125;</code></pre>
+
+<p>有了消息项的数据结构，我们就可以实现 <code>MessageItem</code> 组件。</p>
+<p>MessageItem 分两部分：Avatar、Bubble：</p>
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx">&#x2F;&#x2F; Avatar.js
+
+import React from &#39;react&#39;;
+import &#123; View, Image, StyleSheet, Platform &#125; from &#39;react-native&#39;;
+import pure from &#39;recompose&#x2F;pure&#39;;
+
+const Avatar &#x3D; pure((props) &#x3D;&gt; &#123;
+  const &#123; avatar, style, _props &#125; &#x3D; props;
+
+  return (
+    &lt;View style&#x3D;&#123;[styles.container, style]&#125; &#123;..._props&#125;&gt;
+      &lt;Image style&#x3D;&#123;styles.avatar&#125;
+        source&#x3D;&#123;&#123; uri: avatar &#125;&#125;
+        resizeMode&#x3D;&quot;contain&quot; &#x2F;&gt;
+    &lt;&#x2F;View&gt;
+  );
+&#125;);
+
+const styles &#x3D; StyleSheet.create(&#123;
+  container: &#123;
+    width: 50,
+    height: 50,
+    position: &#39;absolute&#39;,
+    bottom: 0,
+    left: 0,
+  &#125;,
+  avatar: &#123;
+    width: 50,
+    height: 50,
+    backgroundColor: &#39;transparent&#39;,
+    overflow: &#39;hidden&#39;,
+    ...Platform.select(&#123;
+      ios: &#123;
+        borderRadius: 50 &#x2F; 2,
+      &#125;,
+      android: &#123;
+        borderRadius: 50,
+      &#125;
+    &#125;),
+  &#125;
+&#125;);
+
+export default Avatar;</code></pre>
+
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx">&#x2F;&#x2F; Bubble.js
+
+import React from &#39;react&#39;;
+import &#123; View, Text, StyleSheet &#125; from &#39;react-native&#39;;
+import pure from &#39;recompose&#x2F;pure&#39;;
+import moment from &#39;moment&#39;;
+
+const Bubble &#x3D; pure((props) &#x3D;&gt; &#123;
+  const &#123; content, author, date &#125; &#x3D; props;
+
+  const time &#x3D; moment(date).format(&#39;h:mm A&#39;);
+
+  return (
+    &lt;View style&#x3D;&#123;styles.container&#125;&gt;
+      &lt;View style&#x3D;&#123;styles.bubble&#125;&gt;
+        &lt;Text style&#x3D;&#123;styles.author&#125;&gt;&#123;author&#125;&lt;&#x2F;Text&gt;
+        &lt;Text style&#x3D;&#123;styles.content&#125;&gt;&#123;content&#125;&lt;&#x2F;Text&gt;
+        &lt;Text style&#x3D;&#123;styles.time&#125;&gt;&#123;time&#125;&lt;&#x2F;Text&gt;
+      &lt;&#x2F;View&gt;
+    &lt;&#x2F;View&gt;
+  );
+&#125;);
+
+const styles &#x3D; StyleSheet.create(&#123;
+  container: &#123;
+    display: &#39;flex&#39;,
+    flexWrap: &#39;wrap&#39;,
+    flexDirection: &#39;row&#39;,
+  &#125;,
+  bubble: &#123;
+    backgroundColor: &#39;#fff&#39;,
+    borderColor: &#39;#ccc&#39;,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 10,
+    borderRadius: 6,
+  &#125;,
+  author: &#123;
+    color: &#39;blue&#39;,
+    fontSize: 12,
+  &#125;,
+  content: &#123;
+    color: &#39;#000&#39;,
+    fontSize: 18,
+  &#125;,
+  time: &#123;
+    textAlign: &#39;right&#39;,
+    color: &#39;#bababa&#39;,
+    fontSize: 12,
+  &#125;
+&#125;);
+
+export default Bubble;</code></pre>
+
+<p>合二为一：</p>
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx">&#x2F;&#x2F; MessageItem.js
+
+import React from &#39;react&#39;;
+import &#123; View, StyleSheet &#125; from &#39;react-native&#39;;
+import pure from &#39;recompose&#x2F;pure&#39;;
+
+import Avatar from &#39;.&#x2F;Avatar&#39;;
+import Bubble from &#39;.&#x2F;Bubble&#39;;
+
+class MessageItem extends React.Component &#123;
+  render() &#123;
+    const &#123; msg &#125; &#x3D; this.props;
+
+    const &#123; avatar, content, author, date &#125; &#x3D; msg;
+
+    return (
+      &lt;View style&#x3D;&#123;styles.container&#125;&gt;
+        &lt;View style&#x3D;&#123;styles.avatarWrapper&#125;&gt;
+          &lt;Avatar avatar&#x3D;&#123;avatar&#125; &#x2F;&gt;
+        &lt;&#x2F;View&gt;
+        &lt;View style&#x3D;&#123;styles.bubbleWrapper&#125;&gt;
+          &lt;Bubble author&#x3D;&#123;author&#125; date&#x3D;&#123;date&#125; content&#x3D;&#123;content&#125; &#x2F;&gt;
+        &lt;&#x2F;View&gt;
+      &lt;&#x2F;View&gt;
+    );
+  &#125;
+&#125;
+
+const styles &#x3D; StyleSheet.create(&#123;
+  container: &#123;
+    display: &#39;flex&#39;,
+    flexDirection: &#39;row&#39;,
+    alignItems: &#39;stretch&#39;,
+    marginVertical: 4,
+    marginHorizontal: 6,
+  &#125;,
+  avatarWrapper: &#123;
+    width: 50,
+    display: &#39;flex&#39;,
+    flexDirection: &#39;column&#39;,
+    justifyContent: &#39;flex-end&#39;,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: &#39;red&#39;,
+  &#125;,
+  bubbleWrapper: &#123;
+    marginLeft: 6,
+    flex: 1,
+  &#125;
+&#125;);
+
+export default MessageItem;</code></pre>
+
+<p>需要注意到的是尽可能使用纯函数组件来提升性能。</p>
+<p>然后可以实现外部容器了。</p>
+<p><code>Placeholder</code> 比较简单，仅起到占位的作用。</p>
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx">&#x2F;&#x2F; Placeholder.js
+
+import React from &#39;react&#39;;
+import &#123; StyleSheet, Text, View &#125; from &#39;react-native&#39;;
+
+const Placeholder &#x3D; (props) &#x3D;&gt; &#123;
+  return (
+    &lt;View style&#x3D;&#123;[styles.container, props.style]&#125;&gt;
+      &lt;Text style&#x3D;&#123;styles.text&#125;&gt;Placeholder&lt;&#x2F;Text&gt;
+    &lt;&#x2F;View&gt;
+  )
+&#125;;
+
+const styles &#x3D; StyleSheet.create(&#123;
+  container: &#123;
+    height: 60,
+    backgroundColor: &#39;grey&#39;,
+    display: &#39;flex&#39;,
+    alignItems: &#39;center&#39;,
+    justifyContent: &#39;center&#39;,
+  &#125;,
+  text: &#123;
+    color: &#39;#000&#39;,
+    fontSize: 20
+  &#125;
+&#125;);
+
+export default Placeholder;</code></pre>
+
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx">&#x2F;&#x2F; App.js
+import React from &#39;react&#39;;
+import &#123; StyleSheet, Text, View, FlatList, ScrollView &#125; from &#39;react-native&#39;;
+import _ from &#39;lodash&#39;;
+
+import &#123; generateMsg &#125; from &#39;.&#x2F;util&#39;;
+
+import Placeholder from &#39;.&#x2F;Placeholder&#39;;
+import MessageItem from &#39;.&#x2F;MessageItem&#39;;
+
+export default class App extends React.Component &#123;
+  state &#x3D; &#123;
+    list: (function () &#123;
+      const msgList &#x3D; [];
+      for (let i &#x3D; 0; i &lt; 500; i++) &#123;
+        msgList.push(generateMsg());
+      &#125;
+      return msgList;
+    &#125;())
+  &#125;;
+
+  itemRefs &#x3D; [];
+  flatListBottom &#x3D; 0;
+  bottomItemIndex &#x3D; -1;
+
+  _keyExtractor &#x3D; (item, index) &#x3D;&gt; item.id;
+
+  _renderItem &#x3D; (&#123; item, index &#125;) &#x3D;&gt; &#123;
+    return (
+      &lt;MessageItem
+        msg&#x3D;&#123;item&#125;
+        ref&#x3D;&#123;item &#x3D;&gt; this.itemRefs[index] &#x3D; item&#125;
+      &#x2F;&gt;
+    );
+  &#125;
+
+  _placeItemAvatarWithRef &#x3D; (&#123; listBottom, itemHeight, itemTop, ref &#125;) &#x3D;&gt; &#123;
+    const itemBottom &#x3D; itemTop + itemHeight;
+    const AVATAR_HEIGHT &#x3D; 50;
+
+    let offset;
+    if ((listBottom - itemTop) &lt; AVATAR_HEIGHT) &#123;
+      offset &#x3D; itemHeight - AVATAR_HEIGHT;
+    &#125; else &#123;
+      offset &#x3D; itemBottom - listBottom;
+      if (offset &lt; 0) offset &#x3D; 0;
+    &#125;
+    ref._setAvatarBottom(offset);
+  &#125;;
+
+  _placeItemAvatarAtIndex &#x3D; (index) &#x3D;&gt; &#123;
+    const ref &#x3D; this.itemRefs[index];
+
+    if (ref &amp;&amp; typeof ref._measure &#x3D;&#x3D;&#x3D; &#39;function&#39;) &#123;
+      ref._measure((x, y, width, height, pageX, pageY) &#x3D;&gt; &#123;
+        this._placeItemAvatarWithRef(&#123;
+          listBottom: this.flatListBottom,
+          itemHeight: height,
+          itemTop: pageY,
+          ref: ref
+        &#125;);
+      &#125;);
+    &#125;
+  &#125;;
+
+  _onScroll &#x3D; (event) &#x3D;&gt; &#123;
+    const &#123; nativeEvent &#125; &#x3D; event;
+    const bottomItemIndex &#x3D; this.bottomItemIndex;
+    this._placeItemAvatarAtIndex(bottomItemIndex);
+  &#125;;
+
+  _onViewableItemsChanged &#x3D; (&#123; viewableItems, changed &#125;) &#x3D;&gt; &#123;
+    if (viewableItems.length &#x3D;&#x3D;&#x3D; 0) &#123; &#x2F;&#x2F; 列表滚动过快时 viewableItems 可能为空
+      this.bottomItemIndex &#x3D; -1;
+    &#125; else &#123;
+      const bottomItemIndex &#x3D; viewableItems[viewableItems.length - 1].index;
+      this.bottomItemIndex &#x3D; bottomItemIndex;
+      this._placeItemAvatarAtIndex(bottomItemIndex);
+    &#125;
+  &#125;;
+
+  _handleFlatListLayout &#x3D; (event) &#x3D;&gt; &#123;
+    const &#123; nativeEvent &#125; &#x3D; event;
+    const &#123; layout &#125; &#x3D; nativeEvent;
+    const &#123; y, height &#125; &#x3D; layout;
+    this.flatListBottom &#x3D; y + height;
+  &#125;;
+
+  render() &#123;
+    const &#123; list &#125; &#x3D; this.state;
+
+    return (
+      &lt;View style&#x3D;&#123;styles.container&#125;&gt;
+        &lt;Placeholder &#x2F;&gt;
+        &lt;FlatList
+          keyExtractor&#x3D;&#123;this._keyExtractor&#125;
+          onLayout&#x3D;&#123;this._handleFlatListLayout&#125;
+          data&#x3D;&#123;list&#125;
+          onScroll&#x3D;&#123;this._onScroll&#125;
+          onViewableItemsChanged&#x3D;&#123;this._onViewableItemsChanged&#125;
+          renderItem&#x3D;&#123;this._renderItem&#125; &#x2F;&gt;
+        &lt;Placeholder &#x2F;&gt;
+      &lt;&#x2F;View&gt;
+    );
+  &#125;
+&#125;
+
+const styles &#x3D; StyleSheet.create(&#123;
+  container: &#123;
+    flex: 1,
+    backgroundColor: &#39;#f2f3f8&#39;,
+  &#125;
+&#125;);</code></pre>
+
+<p>FlatList 一些接口的实现需要参考源代码。</p>
+<p>由于需要随着列表的滚动而改变列表可视区域的底部头像图片的位置，所以我们用 <code>onViewableItemsChanged</code> 来知晓可视区域最下面的条目的 index，在 <code>onScroll</code> 中做处理。</p>
+<p>我们需要知道 FlatList 底边的位置，所以使用 <code>onLayout</code> 来获取并保存到 <code>flatListBottom</code>。</p>
+<p>现在回到 <code>MessageItem</code> 来实现 <code>_measure</code> 和 <code>_setAvatarBottom</code> 方法。</p>
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx">&#x2F;&#x2F; Avatar.js
+const Avatar &#x3D; pure((props) &#x3D;&gt; &#123;
+  const &#123; avatar, style, avatarContainerRef, _props &#125; &#x3D; props;
+
+  return (
+    &lt;View ref&#x3D;&#123;avatarContainerRef&#125; style&#x3D;&#123;[styles.container, style]&#125; &#123;..._props&#125;&gt;
+      &lt;Image style&#x3D;&#123;styles.avatar&#125;
+        source&#x3D;&#123;&#123; uri: avatar &#125;&#125;
+        resizeMode&#x3D;&quot;contain&quot; &#x2F;&gt;
+    &lt;&#x2F;View&gt;
+  );
+&#125;);</code></pre>
+
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx">&#x2F;&#x2F; MessageItem.js
+class MessageItem extends React.Component &#123;
+  _measure &#x3D; (cb) &#x3D;&gt; &#123;
+    if (this.container) &#123;
+      this.container.measure(cb);
+    &#125;
+  &#125;
+
+  _setAvatarBottom &#x3D; (bottom) &#x3D;&gt; &#123;
+    const ref &#x3D; this.avatarContainerRef;
+    if (ref) &#123;
+      ref.setNativeProps(&#123;
+        bottom: bottom
+      &#125;);
+    &#125;
+  &#125;
+
+  shouldComponentUpdate(nextProps, nextState) &#123;
+    if (nextProps.msg.id !&#x3D;&#x3D; this.props.msg.id) return true;
+    if (nextState.avatarBottom !&#x3D;&#x3D; this.state.avatarBottom) return true;
+    return false;
+  &#125;
+
+  render() &#123;
+    const &#123; msg &#125; &#x3D; this.props;
+    const &#123; avatarBottom &#125; &#x3D; this.state;
+
+    const &#123; avatar, content, author, date &#125; &#x3D; msg;
+
+    return (
+      &lt;View
+        renderToHardwareTextureAndroid&#x3D;&#123;true&#125;
+        style&#x3D;&#123;styles.container&#125;
+        ref&#x3D;&#123;view &#x3D;&gt; this.container &#x3D; view&#125; &gt;
+        &lt;View style&#x3D;&#123;styles.avatarWrapper&#125;&gt;
+          &lt;Avatar avatar&#x3D;&#123;avatar&#125;
+            avatarContainerRef&#x3D;&#123;ref &#x3D;&gt; this.avatarContainerRef &#x3D; ref&#125;
+          &#x2F;&gt;
+        &lt;&#x2F;View&gt;
+        &lt;View style&#x3D;&#123;styles.bubbleWrapper&#125;&gt;
+          &lt;Bubble author&#x3D;&#123;author&#125; date&#x3D;&#123;date&#125; content&#x3D;&#123;content&#125; &#x2F;&gt;
+        &lt;&#x2F;View&gt;
+      &lt;&#x2F;View&gt;
+    );
+  &#125;
+&#125;</code></pre>
+
+<p>修改元素的 bottom 值需要使用到 <code>setNativeProps</code> 来避免 <code>setState</code> 造成的额外开销。</p>
+<p>这里我们实现了 <code>shouldComponentUpdate</code> 防止 <code>MessageItem</code> 组件不必要的更新。</p>
+<p>基本大功告成了。</p>
+<h3 id="更进一步"><a href="#更进一步" class="headerlink" title="更进一步"></a>更进一步</h3><p>滚动列表的时候，会发现有些头像的位置不对。</p>
+<p><img src="/images/2017/12/screenshot-message-list-avatar-wrong-position.png" alt="screenshot message list avatar wrong position"></p>
+<p>分析原因，是由于 <code>onScroll</code> 并不能保证 <code>._setAvatarBottom(0);</code> 在 <code>MessageItem</code> 完整显示时被触发。所以对于完整显示的 <code>MessageItem</code> 我们可以在 <code>onViewableItemsChanged</code> 中进行处理。</p>
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx">&#x2F;&#x2F; App.js
+
+class App &#123;
+  _resetItemAtIndexes &#x3D; (indexes) &#x3D;&gt; &#123;
+    indexes.forEach(index &#x3D;&gt; &#123;
+      const ref &#x3D; this.itemRefs[index];
+      if (ref) &#123;
+        ref._setAvatarBottom(0);
+      &#125;
+    &#125;);
+  &#125;
+
+  _onViewableItemsChanged &#x3D; (&#123; viewableItems, changed &#125;) &#x3D;&gt; &#123;
+    if (viewableItems.length &#x3D;&#x3D;&#x3D; 0) &#123;
+      this.bottomItemIndex &#x3D; -1;
+    &#125; else &#123;
+      const bottomItemIndex &#x3D; viewableItems[viewableItems.length - 1].index;
+      this.bottomItemIndex &#x3D; bottomItemIndex;
+      this._placeItemAvatarAtIndex(bottomItemIndex);
+      this._resetItemAtIndexes(
+        viewableItems.map(item &#x3D;&gt; item.index)
+          .filter(index &#x3D;&gt; index !&#x3D;&#x3D; bottomItemIndex) &#x2F;&#x2F; 找出所有完整显示的项目
+      );
+    &#125;
+  &#125;;
+&#125;</code></pre>
+
+<p>现在我们再来看下效果，</p>
+<p><video src="/images/2017/11/rn-message-list-1.mp4" controls></video></p>
+<p>似乎并不尽如人意，通过 <code>bottom</code> 来修改 avatar 的位置并不流畅。</p>
+<p>看来还有优化空间。</p>
+<p>在 <code>_placeItemAvatarAtIndex</code> 中，由于 <code>_measure</code> 是异步的操作，可能在 <code>measure</code> 执行完成后，已不需要对对应的元素进行处理，所以可以在这里加个判断。</p>
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx">_placeItemAvatarAtIndex &#x3D; (index) &#x3D;&gt; &#123;
+  const ref &#x3D; this.itemRefs[index];
+
+  if (ref &amp;&amp; typeof ref._measure &#x3D;&#x3D;&#x3D; &#39;function&#39;) &#123;
+    this.currentMeasure &#x3D; index;
+    ref._measure((x, y, width, height, pageX, pageY) &#x3D;&gt; &#123;
+      console.log(index !&#x3D;&#x3D; this.currentMeasure);
+      if (index !&#x3D;&#x3D; this.currentMeasure) return; &#x2F;&#x2F; 不需要执行后续操作，直接返回
+      this._placeItemAvatarWithRef(&#123;
+        listBottom: this.flatListBottom,
+        itemHeight: height,
+        itemTop: pageY,
+        ref: ref
+      &#125;);
+    &#125;);
+  &#125;
+&#125;;</code></pre>
+
+<p>考虑生成一个悬浮的 <code>Avatar</code> 在滚动 <code>FlatList</code> 的时候，动态显示隐藏，这样应该会更流畅。</p>
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx">&#x2F;&#x2F; App.js
+
+class App &#123;
+  state &#x3D; &#123;
+    list: (function () &#123;
+      const msgList &#x3D; [];
+      for (let i &#x3D; 0; i &lt; 500; i++) &#123;
+        msgList.push(generateMsg());
+      &#125;
+      return msgList;
+    &#125;()),
+    currentFixedAvatarUri: &#39;&#39;,
+    showFixedAvatar: false
+  &#125;;
+
+  itemRefs &#x3D; []; &#x2F;&#x2F; 保存列表中元素的 ref
+  flatListBottom &#x3D; 0; &#x2F;&#x2F; 列表 layout 的 bottom 值
+  bottomItemIndex &#x3D; -1;
+  bottomItem &#x3D; null;
+  currentMeasure &#x3D; -1; &#x2F;&#x2F; 当前 measure 的元素的 index
+
+  _showFixedAvatar() &#123;
+    this.setState(&#123;
+      currentFixedAvatarUri: this.bottomItem.avatar
+    &#125;);
+  &#125;
+
+  _hideFixedAvatar() &#123;
+    this.setState(&#123;
+      showFixedAvatar: false
+    &#125;);
+  &#125;
+
+  _onLoadFixedAvatar &#x3D; (uri, index) &#x3D;&gt; &#123;
+    &#x2F;&#x2F; 判断载入完成的是否是当前待处理的 avatar
+    if (this.bottomItem.avatar &#x3D;&#x3D;&#x3D; uri) &#123;
+      const ref &#x3D; this.itemRefs[index];
+      if (ref) &#123;
+        this.setState(&#123;
+          showFixedAvatar: true,
+        &#125;);
+        ref._setAvatarVisibility(false);
+      &#125;
+    &#125;
+  &#125;
+
+  _placeItemAvatarWithRef &#x3D; (&#123; listBottom, itemHeight, itemTop, ref, index &#125;) &#x3D;&gt; &#123;
+    const itemBottom &#x3D; itemTop + itemHeight;
+    const AVATAR_HEIGHT &#x3D; 50;
+
+    let offset;
+    if ((listBottom - itemTop) &lt; AVATAR_HEIGHT) &#123;
+      offset &#x3D; itemHeight - AVATAR_HEIGHT;
+
+      ref._setAvatarVisibility(true);
+      this._hideFixedAvatar();
+    &#125; else &#123;
+      offset &#x3D; itemBottom - listBottom;
+
+      if (offset &gt; 0) &#123;
+        this._showFixedAvatar();
+      &#125; else &#123;
+        ref._setAvatarVisibility(true);
+        this._hideFixedAvatar();
+      &#125;
+    &#125;
+
+    ref._setAvatarBottom(offset &gt; 0 ? offset : 0);
+  &#125;;
+
+  _resetItemAtIndexes &#x3D; (indexes) &#x3D;&gt; &#123;
+    indexes.forEach(index &#x3D;&gt; &#123;
+      const ref &#x3D; this.itemRefs[index];
+      if (ref) &#123;
+        ref._setAvatarBottom(0);
+        ref._setAvatarVisibility(true);
+      &#125;
+    &#125;);
+  &#125;
+
+  _onViewableItemsChanged &#x3D; (&#123; viewableItems, changed &#125;) &#x3D;&gt; &#123;
+    if (viewableItems.length &#x3D;&#x3D;&#x3D; 0) &#123;
+      this.bottomItemIndex &#x3D; -1;
+    &#125; else &#123;
+      const lastViewableItem &#x3D; viewableItems[viewableItems.length - 1];
+      this.bottomItem &#x3D; lastViewableItem.item; &#x2F;&#x2F; 记录当前底部元素
+      const bottomItemIndex &#x3D; lastViewableItem.index;
+      this.bottomItemIndex &#x3D; bottomItemIndex; &#x2F;&#x2F; 记录当前底部元素的索引
+      this._placeItemAvatarAtIndex(bottomItemIndex);
+      this._resetItemAtIndexes(
+        viewableItems.map(item &#x3D;&gt; item.index)
+          .filter(index &#x3D;&gt; index !&#x3D;&#x3D; bottomItemIndex)
+      );
+    &#125;
+  &#125;;
+
+  render() &#123;
+    const &#123; list, currentFixedAvatarUri, showFixedAvatar &#125; &#x3D; this.state;
+
+    return (
+      &lt;View style&#x3D;&#123;styles.container&#125;&gt;
+        &lt;Placeholder &#x2F;&gt;
+        &lt;FlatList
+          keyExtractor&#x3D;&#123;this._keyExtractor&#125;
+          onLayout&#x3D;&#123;this._handleFlatListLayout&#125;
+          data&#x3D;&#123;list&#125;
+          onScroll&#x3D;&#123;this._onScroll&#125;
+          onViewableItemsChanged&#x3D;&#123;this._onViewableItemsChanged&#125;
+          renderItem&#x3D;&#123;this._renderItem&#125; &#x2F;&gt;
+        &lt;Placeholder &#x2F;&gt;
+        &lt;Avatar
+          onLoad&#x3D;&#123;this._onLoadFixedAvatar.bind(this, currentFixedAvatarUri, this.bottomItemIndex)&#125;
+          style&#x3D;&#123;[styles.fixedAvatar, showFixedAvatar ? &#123; opacity: 1 &#125; : &#123; opacity: 0 &#125;]&#125;
+          avatar&#x3D;&#123;currentFixedAvatarUri&#125; &#x2F;&gt;
+      &lt;&#x2F;View&gt;
+    );
+  &#125;
+&#125;
+
+const styles &#x3D; StyleSheet.create(&#123;
+  container: &#123;
+    flex: 1,
+    backgroundColor: &#39;#f2f3f8&#39;,
+  &#125;,
+  fixedAvatar: &#123;
+    bottom: 60 + OFFSET,
+    left: 6,
+  &#125;
+&#125;);</code></pre>
+
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx">&#x2F;&#x2F; MessageItem.js
+class MessageItem &#123;
+  _setAvatarVisibility &#x3D; (visible) &#x3D;&gt; &#123;
+    const ref &#x3D; this.avatarContainerRef;
+    if (ref) &#123;
+      ref.setNativeProps(&#123;
+        opacity: visible ? 1 : 0
+      &#125;);
+    &#125;
+  &#125;
+&#125;</code></pre>
+
+<p>效果：</p>
+<p><video controls src="/images/2017/11/rn-message-list-2.mp4"></video></p>
+<p>注意点：</p>
+<ul>
+<li>通过 <code>opacity</code> 属性控制元素的显示隐藏</li>
+<li>监听 fixedAvatar 的 <code>onLoad</code> 事件，避免图片加载造成显示的抖动</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="Hanai 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/reward/alipay.png" alt="Hanai 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/ReactNative/" rel="tag"># ReactNative</a>
+              <a href="/tags/React/" rel="tag"># React</a>
+              <a href="/tags/FlatList/" rel="tag"># FlatList</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/11/optimize-react-functional-component-performance.html" rel="prev" title="优化 React Functional Component 性能">
+                  <i class="fa fa-chevron-left"></i> 优化 React Functional Component 性能
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/11/convert-mov-to-mp4-on-mac-os.html" rel="next" title="convert mov to mp4 on macOS">
+                  convert mov to mp4 on macOS <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hanai</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">182k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">5:32</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.loli.net/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/components/prism-core.min.js" integrity="sha256-c9n/9oG7sBeCouNZfRg5tO8VCCQXGPLiDPJNaF5Qgic=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/autoloader/prism-autoloader.min.js" integrity="sha256-RtKI23ujTCOg3jNK74NK61WGNYbtBWcqh6UKebC2AQo=" crossorigin="anonymous"></script>
+  <script src="//cdnjs.loli.net/ajax/libs/prism/1.27.0/plugins/line-numbers/prism-line-numbers.min.js" integrity="sha256-K837BwIyiXo5k/9fCYgqUyA14bN4/Ve9P2SIT0KmZD0=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="//cdnjs.loli.net/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"//cdnjs.loli.net/ajax/libs/mermaid/8.14.0/mermaid.min.js","integrity":"sha256-7wT34TI0pEBeEFoi4z+vhuSddGh6vUTMWdqJ2SDe2jg="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+<script>
+(function () {
+  var createContainer = function (xml) {
+    var container = document.createElement('div');
+    container.className = 'mxgraph';
+    container.style = 'max-width:100%;border:1px solid transparent;';
+    var attr = {
+      highlight: '#0000ff',
+      nav: true,
+      resize: true,
+      toolbar: 'zoom layers lightbox',
+      edit: '_blank',
+      xml: xml
+    };
+    container.setAttribute('data-mxgraph', JSON.stringify(attr));
+    return container;
+  };
+
+  var fetchXml = function (src) {
+    return fetch(src).then(function (res) {
+      return res.text();
+    });
+  };
+
+  var insertDrawioGraphElement = function (src, target) {
+    return fetchXml(src).then(function (xml) {
+      var container = createContainer(xml);
+      target.parentNode.insertBefore(container, target);
+      target.parentNode.removeChild(target);
+
+      return container;
+    });
+  }
+
+  var nodes = document.querySelectorAll('.drawio-placeholder');
+
+  if (nodes.length) {
+    var jobs = Array.prototype.slice.call(nodes).map(function (node) {
+      var src = node.getAttribute('data-src');
+      return insertDrawioGraphElement(src, node);
+    });
+    NexT.utils.getScript('/lib/drawio_viewer.min.js', () => {
+      jobs.forEach(function (job) {
+        job.then(function (element) {
+          try {
+            element.innerHTML = "";
+            GraphViewer.createViewerForElement(element)
+          } catch (e) { throw element.innerHTML = e.message, e; }
+        });
+      })
+    }, window.GraphViewer);
+  }
+}())
+</script>
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"//cdnjs.loli.net/ajax/libs/mathjax/3.2.0/es5/tex-svg-full.js"}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqusjs.css" integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin="anonymous">
+
+<script class="next-config" data-name="disqusjs" type="application/json">{"enable":true,"api":"https://disqus.skk.moe/disqus/","apikey":"FYoVMcKqcN4CqNtu12XmvvZ1VbdbnSv6Vwsm8N6ncNTXWK8ekX3XEzMcuf5qprK4","shortname":"blog-ihanai","js":{"url":"//cdnjs.loli.net/ajax/libs/disqusjs/1.3.0/disqus.js","integrity":"sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw="}}</script>
+<script src="/js/third-party/comments/disqusjs.js"></script>
+
+</body>
+</html>
